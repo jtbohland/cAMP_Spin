@@ -250,7 +250,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
       )}
 
       {/* Coach Scorecard — inline form for presenter to enter coach's verbal feedback */}
-      {assessmentDone && isMultiplayer && spinId && !coachSubmitted && (
+      {assessmentDone && isMultiplayer && !coachSubmitted && (
         <div className="mt-3 pt-3 border-t border-border">
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
             <div className="flex items-center gap-1.5 mb-1">
@@ -282,6 +282,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               onClick={async () => {
                 if (!coachName.trim()) { toast.error("Enter coach's name"); return; }
                 if (coachClarity === 0 || coachTone === 0 || coachCredibility === 0 || coachClose === 0) { toast.error("Rate all 4 categories"); return; }
+                if (!spinId) { toast.error("Still recording spin — try again in a moment"); return; }
                 try {
                   await recordRating({
                     spinId,

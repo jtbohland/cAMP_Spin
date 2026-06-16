@@ -42,6 +42,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
   const rafRef = useRef<number | null>(null);
   const lastTickSegRef = useRef<number>(-1);
   const [currentSpinId, setCurrentSpinId] = useState<number | null>(null);
+  const spinIdPromiseRef = useRef<Promise<number | null> | null>(null);
   const { run: recordSpin } = useApi("RecordSpin");
   const { run: updateSpin } = useApi("UpdateSpin");
 
@@ -119,8 +120,8 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
             type: "scenario",
             icon: scenario.icon,
             label: scenario.label,
-            prompt: `${scenario.setup} They say: ${scenario.oneliner}`,
-            hint: "Keep it under 2 minutes. Conversational, not salesy.",
+            prompt: `${scenario.setup} You're pitching ${product.name}. They say: "${scenario.oneliner}"`,
+            hint: `Keep it under 2 minutes. Conversational, not salesy. Focus on ${product.name}.`,
           };
         } else {
           // Challenger Play
@@ -137,7 +138,8 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
 
         // Record spin immediately on landing — so it counts on the leaderboard
         // regardless of whether they complete self-assessment
-        recordSpin({
+        // Store promise in ref so handleSpinRecorded can await it if needed
+        spinIdPromiseRef.current = recordSpin({
           productId: product.id,
           challengeType: newChallenge.type,
           cheatPeek: false,
@@ -146,11 +148,12 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
           timerExpired: false,
           isMultiplayer,
         }).then((result) => {
-          if (result?.spinId) {
-            setCurrentSpinId(result.spinId);
-          }
+          const id = result?.spinId ?? null;
+          if (id) setCurrentSpinId(id);
+          return id;
         }).catch((e) => {
           console.error("Failed to record spin:", e);
+          return null;
         });
 
         setTimeout(() => {
@@ -171,13 +174,19 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
     timerUsed: boolean;
     timerExpired: boolean;
   }) => {
-    if (!currentSpinId) {
+    // Await the spinId if it hasn't resolved yet (race condition fix)
+    let spinId = currentSpinId;
+    if (!spinId && spinIdPromiseRef.current) {
+      spinId = await spinIdPromiseRef.current;
+    }
+    if (!spinId) {
       console.error("No spinId available to update");
       return;
     }
+    setCurrentSpinId(spinId);
     try {
       await updateSpin({
-        spinId: currentSpinId,
+        spinId,
         cheatPeek: spinData.cheatPeek,
         selfScore: spinData.selfScore,
         timerUsed: spinData.timerUsed,
