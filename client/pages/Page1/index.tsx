@@ -31,13 +31,13 @@ export default function Page1Component() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-screen text-foreground font-sans" style={{ background: '#F3EDFC' }}>
       {/* Header */}
-      <div className="bg-card border-b border-border px-5 py-4 flex items-center gap-3">
+      <div className="px-5 py-4 flex items-center gap-3" style={{ background: '#4A1D8E', borderBottom: '1px solid #5B2BA6' }}>
         <span className="text-2xl">🎡</span>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-foreground">Wheel & Deal</h1>
-          <p className="text-xs text-muted-foreground">Two minutes. No slides. No jargon. A real answer to "so what does Amplitude do?"</p>
+          <h1 className="text-lg font-bold text-white">Wheel & Deal</h1>
+          <p className="text-xs text-purple-200">Two minutes. No slides. No jargon. A real answer to "so what does Amplitude do?"</p>
         </div>
       </div>
 
