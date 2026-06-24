@@ -8,13 +8,17 @@ const SpinRowSchema = z.object({
   product_id: z.string(),
   challenge_type: z.string(),
   self_score: z.coerce.number().nullable(),
+  self_clarity: z.coerce.number().nullable(),
+  self_conversational: z.coerce.number().nullable(),
+  self_credibility: z.coerce.number().nullable(),
+  self_close: z.coerce.number().nullable(),
   is_multiplayer: z.boolean(),
   created_at: z.string(),
 });
 
 export default api({
   name: "GetSpinDetails",
-  description: "Fetches spin session details for the observer view",
+  description: "Fetches spin session details including 4C self-scores",
   integrations: {
     db: postgres(APPS_DB),
   },
@@ -28,13 +32,19 @@ export default api({
       productId: z.string(),
       challengeType: z.string(),
       selfScore: z.number().nullable(),
+      selfClarity: z.number().nullable(),
+      selfConversational: z.number().nullable(),
+      selfCredibility: z.number().nullable(),
+      selfClose: z.number().nullable(),
       isMultiplayer: z.boolean(),
       createdAt: z.string(),
     }).nullable(),
   }),
   async run(ctx, { spinId }) {
     const rows = await ctx.integrations.db.query(
-      `SELECT id, user_name, product_id, challenge_type, self_score, is_multiplayer, created_at
+      `SELECT id, user_name, product_id, challenge_type, self_score,
+              self_clarity, self_conversational, self_credibility, self_close,
+              is_multiplayer, created_at
        FROM wheel_deal_spins
        WHERE id = $1
        LIMIT 1`,
@@ -55,6 +65,10 @@ export default api({
         productId: r.product_id,
         challengeType: r.challenge_type,
         selfScore: r.self_score,
+        selfClarity: r.self_clarity,
+        selfConversational: r.self_conversational,
+        selfCredibility: r.self_credibility,
+        selfClose: r.self_close,
         isMultiplayer: r.is_multiplayer,
         createdAt: r.created_at,
       },

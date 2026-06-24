@@ -170,7 +170,10 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
     productId: string;
     challengeType: string;
     cheatPeek: boolean;
-    selfScore: number | null;
+    selfClarity: number | null;
+    selfConversational: number | null;
+    selfCredibility: number | null;
+    selfClose: number | null;
     timerUsed: boolean;
     timerExpired: boolean;
   }) => {
@@ -188,7 +191,10 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
       await updateSpin({
         spinId,
         cheatPeek: spinData.cheatPeek,
-        selfScore: spinData.selfScore,
+        selfClarity: spinData.selfClarity,
+        selfConversational: spinData.selfConversational,
+        selfCredibility: spinData.selfCredibility,
+        selfClose: spinData.selfClose,
         timerUsed: spinData.timerUsed,
         timerExpired: spinData.timerExpired,
       });

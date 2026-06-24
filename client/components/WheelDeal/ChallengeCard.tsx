@@ -4,6 +4,13 @@ import { DebriefCard } from "./DebriefCard.js";
 import { useApi } from "@/hooks/useApi.js";
 import { toast } from "sonner";
 
+type SelfScores = {
+  clarity: number;
+  conversational: number;
+  credibility: number;
+  close: number;
+};
+
 type ChallengeCardProps = {
   challenge: Challenge;
   isMultiplayer: boolean;
@@ -12,18 +19,14 @@ type ChallengeCardProps = {
     productId: string;
     challengeType: string;
     cheatPeek: boolean;
-    selfScore: number | null;
+    selfClarity: number | null;
+    selfConversational: number | null;
+    selfCredibility: number | null;
+    selfClose: number | null;
     timerUsed: boolean;
     timerExpired: boolean;
   }) => void;
 };
-
-const ASSESSMENT_QUESTIONS = [
-  "I nailed the one-liner",
-  "I avoided feature-dumping",
-  "I kept it under 2 minutes",
-  "I landed the follow-up ask",
-];
 
 export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpinRecorded }: ChallengeCardProps) {
   const [showCheat, setShowCheat] = useState(false);
@@ -31,9 +34,16 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   const [timerSecs, setTimerSecs] = useState(120);
   const [timerActive, setTimerActive] = useState(false);
   const [timerUsed, setTimerUsed] = useState(false);
-  const [assessment, setAssessment] = useState<boolean[]>([false, false, false, false]);
   const [assessmentDone, setAssessmentDone] = useState(false);
   const [showDebrief, setShowDebrief] = useState(true);
+
+  // Self-eval 4C scores (1-3 each)
+  const [selfClarity, setSelfClarity] = useState(0);
+  const [selfTone, setSelfTone] = useState(0);
+  const [selfCredibility, setSelfCredibility] = useState(0);
+  const [selfClose, setSelfClose] = useState(0);
+
+  // Coach scorecard scores
   const [coachClarity, setCoachClarity] = useState(0);
   const [coachTone, setCoachTone] = useState(0);
   const [coachCredibility, setCoachCredibility] = useState(0);
@@ -84,30 +94,28 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
     setShowCheat((prev) => !prev);
   }, [showCheat]);
 
-  const handleAssessmentToggle = useCallback((idx: number) => {
-    setAssessment((prev) => {
-      const next = [...prev];
-      next[idx] = !next[idx];
-      return next;
-    });
-  }, []);
-
   const handleSubmitAssessment = useCallback(() => {
-    const score = assessment.filter(Boolean).length;
     setAssessmentDone(true);
     onSpinRecorded({
       productId: challenge.product.id,
       challengeType: challenge.type,
       cheatPeek: cheatPeeked,
-      selfScore: score,
+      selfClarity,
+      selfConversational: selfTone,
+      selfCredibility,
+      selfClose,
       timerUsed,
       timerExpired: timerSecs === 0 && !timerDoneEarly,
     });
-  }, [assessment, challenge, cheatPeeked, timerUsed, timerSecs, timerDoneEarly, onSpinRecorded]);
+  }, [challenge, cheatPeeked, selfClarity, selfTone, selfCredibility, selfClose, timerUsed, timerSecs, timerDoneEarly, onSpinRecorded]);
 
   const color = challenge.product.color;
   const timerColor = timerSecs <= 30 ? "#E53935" : timerSecs <= 60 ? "#F57C00" : "var(--color-foreground)";
-  const selfScore = assessmentDone ? assessment.filter(Boolean).length : null;
+
+  // Build self-scores object for debrief (null if not yet assessed)
+  const selfScores: SelfScores | null = assessmentDone
+    ? { clarity: selfClarity, conversational: selfTone, credibility: selfCredibility, close: selfClose }
+    : null;
 
   return (
     <div className="w-full max-w-lg rounded-xl p-5 border text-left" style={{ borderColor: color, background: "var(--color-card)" }}>
@@ -218,34 +226,38 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
         </div>
       )}
 
-      {/* Self-assessment — only shows after timer ends or "Done" is clicked */}
+      {/* Self-assessment — 4Cs rated 1-3 (matches coach scorecard) */}
       {!assessmentDone && (timerSecs === 0 || timerDoneEarly) && (
         <div className="mt-3 pt-3 border-t border-border">
-          <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">How did you do?</div>
-          <p className="text-[10px] text-muted-foreground mb-2.5">Select all that apply</p>
-          {ASSESSMENT_QUESTIONS.map((q, i) => (
-            <div
-              key={i}
-              onClick={() => handleAssessmentToggle(i)}
-              className="flex items-center gap-2 p-2 rounded-lg mb-1.5 cursor-pointer border transition-colors"
-              style={{
-                background: assessment[i] ? "rgba(0,200,83,0.06)" : "var(--color-background)",
-                borderColor: assessment[i] ? "#00C853" : "var(--color-border)",
-              }}
-            >
-              <span className="text-sm">{assessment[i] ? "✅" : "⬜"}</span>
-              <span className="text-sm" style={{ color: assessment[i] ? "var(--color-foreground)" : "var(--color-muted-foreground)" }}>{q}</span>
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-base">🫵🏼</span>
+              <p className="text-sm font-semibold text-foreground">How Did You Do?</p>
             </div>
-          ))}
-          {assessment.some(Boolean) && (
+            <p className="text-xs text-muted-foreground mb-3">Rate yourself honestly on each category — this will be compared with your coach's scores.</p>
+            <p className="text-[10px] text-muted-foreground mb-3 italic">1 = Needs work · 2 = Solid · 3 = Nailed it</p>
+
+            <div className="space-y-2 mb-4">
+              <RatingRow label="Clarity" description="Were you concise and easy to follow?" value={selfClarity} onChange={setSelfClarity} />
+              <RatingRow label="Conversational Tone" description="Did it feel natural, not scripted?" value={selfTone} onChange={setSelfTone} />
+              <RatingRow label="Credibility" description="Did you speak about the product correctly?" value={selfCredibility} onChange={setSelfCredibility} />
+              <RatingRow label="Close" description="Did you end with a compelling ask?" value={selfClose} onChange={setSelfClose} />
+            </div>
+
             <button
-              onClick={handleSubmitAssessment}
-              className="mt-2 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
+              onClick={() => {
+                if (selfClarity === 0 || selfTone === 0 || selfCredibility === 0 || selfClose === 0) {
+                  toast.error("Rate all 4 categories");
+                  return;
+                }
+                handleSubmitAssessment();
+              }}
+              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors"
               style={{ background: color }}
             >
-              Submit
+              Submit Self-Evaluation
             </button>
-          )}
+          </div>
         </div>
       )}
 
@@ -271,10 +283,10 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
 
             {/* Score inputs */}
             <div className="space-y-2 mb-4">
-              <CoachRatingRow label="Clarity" description="Were they concise and easy to follow?" value={coachClarity} onChange={setCoachClarity} />
-              <CoachRatingRow label="Conversational Tone" description="Did it feel natural, not scripted?" value={coachTone} onChange={setCoachTone} />
-              <CoachRatingRow label="Credibility" description="Did they speak about the product correctly?" value={coachCredibility} onChange={setCoachCredibility} />
-              <CoachRatingRow label="Close" description="Did they end with a compelling ask?" value={coachClose} onChange={setCoachClose} />
+              <RatingRow label="Clarity" description="Were they concise and easy to follow?" value={coachClarity} onChange={setCoachClarity} />
+              <RatingRow label="Conversational Tone" description="Did it feel natural, not scripted?" value={coachTone} onChange={setCoachTone} />
+              <RatingRow label="Credibility" description="Did they speak about the product correctly?" value={coachCredibility} onChange={setCoachCredibility} />
+              <RatingRow label="Close" description="Did they end with a compelling ask?" value={coachClose} onChange={setCoachClose} />
             </div>
 
             {/* Submit */}
@@ -315,13 +327,13 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
 
       {/* Debrief Card — polls for observer ratings */}
       {isMultiplayer && assessmentDone && spinId && showDebrief && (
-        <DebriefCard spinId={spinId} selfScore={selfScore} onDismiss={() => setShowDebrief(false)} />
+        <DebriefCard spinId={spinId} selfScores={selfScores} onDismiss={() => setShowDebrief(false)} />
       )}
     </div>
   );
 }
 
-function CoachRatingRow({ label, description, value, onChange }: { label: string; description: string; value: number; onChange: (v: number) => void }) {
+function RatingRow({ label, description, value, onChange }: { label: string; description: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex-1">

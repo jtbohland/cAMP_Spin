@@ -63,6 +63,28 @@ export default api({
       { label: "Add credibility_score column" }
     );
 
+    // Add individual self-assessment score columns (4Cs)
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS self_clarity INTEGER CHECK (self_clarity BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add self_clarity column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS self_conversational INTEGER CHECK (self_conversational BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add self_conversational column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS self_credibility INTEGER CHECK (self_credibility BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add self_credibility column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS self_close INTEGER CHECK (self_close BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add self_close column" }
+    );
+
     // Page visits tracking
     await ctx.integrations.db.execute(
       `CREATE TABLE IF NOT EXISTS wheel_deal_visits (
