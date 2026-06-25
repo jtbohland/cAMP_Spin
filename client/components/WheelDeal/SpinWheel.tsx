@@ -283,15 +283,9 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
             const y1 = CY + R * Math.sin(start);
             const x2 = CX + R * Math.cos(end);
             const y2 = CY + R * Math.sin(end);
-            // Radial spoke text: text runs from center outward along the segment bisector
+            // Radial spoke text: ALL text reads center-outward (standard wheel spoke convention)
             const midAngleDeg = ((start + SEG_ANGLE / 2) * 180) / Math.PI;
-            // Rotate so text baseline runs along the spoke (no +90)
-            let textRotDeg = midAngleDeg;
-            // Normalize to 0-360
-            const normRot = ((textRotDeg % 360) + 360) % 360;
-            // Flip if text would read inward (right-to-left)
-            const isFlipped = normRot > 90 && normRot < 270;
-            if (isFlipped) textRotDeg += 180;
+            const textRotDeg = midAngleDeg;
             // Split product name into compact groups for spoke layout
             let words: string[];
             if (prod.name.includes("+")) {
@@ -337,8 +331,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
                 />
                 <g transform={`translate(${CX}, ${CY}) rotate(${textRotDeg})`}>
                   {words.map((word, wi) => {
-                    const pos = wordPositions[wi];
-                    const wordX = isFlipped ? -pos : pos;
+                    const wordX = wordPositions[wi];
                     return (
                       <text
                         key={wi}
