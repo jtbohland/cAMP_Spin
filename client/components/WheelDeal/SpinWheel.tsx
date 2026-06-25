@@ -20,28 +20,32 @@ function fireEmojiConfetti(productId: string) {
   if (!emojis) return;
   // Fire a separate burst for EACH emoji so both are guaranteed to appear
   for (const emoji of emojis) {
-    const shape = confetti.shapeFromText({ text: emoji, scalar: 2 });
+    const shape = confetti.shapeFromText({ text: emoji, scalar: 3 });
     // Burst from left
     confetti({
-      particleCount: 18,
+      particleCount: 30,
       angle: 60,
-      spread: 55,
-      origin: { x: 0.1, y: 0.5 },
+      spread: 70,
+      origin: { x: 0, y: 0.5 },
       shapes: [shape],
-      scalar: 2,
-      ticks: 140,
-      gravity: 0.7,
+      scalar: 3,
+      ticks: 300,
+      gravity: 0.4,
+      drift: 0.5,
+      decay: 0.92,
     });
     // Burst from right
     confetti({
-      particleCount: 18,
+      particleCount: 30,
       angle: 120,
-      spread: 55,
-      origin: { x: 0.9, y: 0.5 },
+      spread: 70,
+      origin: { x: 1, y: 0.5 },
       shapes: [shape],
-      scalar: 2,
-      ticks: 140,
-      gravity: 0.7,
+      scalar: 3,
+      ticks: 300,
+      gravity: 0.4,
+      drift: -0.5,
+      decay: 0.92,
     });
   }
 }
@@ -97,6 +101,8 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
 
   const spin = useCallback(() => {
     if (spinning) return;
+    // Cancel any in-flight animation before starting a new spin
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setSpinning(true);
     setChallenge(null);
     lastTickSegRef.current = -1;
@@ -251,8 +257,10 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
 
   return (
     <div className="flex flex-col items-center pt-2">
-      <p className="text-base font-bold text-foreground mb-1">Spin the Wheel</p>
-      <p className="text-xs text-muted-foreground mb-5 text-center">
+      <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 mb-1 drop-shadow-sm">
+        🎰 Spin the Wheel!
+      </h1>
+      <p className="text-sm text-muted-foreground mb-5 text-center">
         Land on a product. Get a challenge. Practice out loud before checking the cheat sheet.
       </p>
 
