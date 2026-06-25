@@ -1,7 +1,50 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import confetti from "canvas-confetti";
 import { PRODUCTS, SCENARIOS, type Product, type Challenge, getRandom } from "@/lib/wheel-deal-data.js";
 import { useApi } from "@/hooks/useApi.js";
 import ChallengeCard from "./ChallengeCard.js";
+
+// Confetti emoji pairs per product
+const CONFETTI_EMOJIS: Record<string, string[]> = {
+  analytics: ["📊", "📈"],
+  sessionreplay: ["🔥", "🗺️"],
+  experimentation: ["🧪", "🥼"],
+  guidessurveys: ["🐕", "🧭"],
+  activation: ["🚀", "🎯"],
+  aifeedback: ["🦾", "💬"],
+  aiassistant: ["🤖", "🗣️"],
+};
+
+function fireEmojiConfetti(productId: string) {
+  const emojis = CONFETTI_EMOJIS[productId];
+  if (!emojis) return;
+  // Fire a separate burst for EACH emoji so both are guaranteed to appear
+  for (const emoji of emojis) {
+    const shape = confetti.shapeFromText({ text: emoji, scalar: 2 });
+    // Burst from left
+    confetti({
+      particleCount: 18,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0.1, y: 0.5 },
+      shapes: [shape],
+      scalar: 2,
+      ticks: 140,
+      gravity: 0.7,
+    });
+    // Burst from right
+    confetti({
+      particleCount: 18,
+      angle: 120,
+      spread: 55,
+      origin: { x: 0.9, y: 0.5 },
+      shapes: [shape],
+      scalar: 2,
+      ticks: 140,
+      gravity: 0.7,
+    });
+  }
+}
 
 type SpinWheelTabProps = {
   onProductLand: (product: Product) => void;
@@ -156,6 +199,9 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
           return null;
         });
 
+        // Fire emoji confetti on landing
+        fireEmojiConfetti(product.id);
+
         setTimeout(() => {
           onProductLand(product);
           setChallenge(newChallenge);
@@ -237,10 +283,50 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
             const y1 = CY + R * Math.sin(start);
             const x2 = CX + R * Math.cos(end);
             const y2 = CY + R * Math.sin(end);
-            const mx = CX + R * 0.5 * Math.cos(start + SEG_ANGLE / 2);
-            const my = CY + R * 0.5 * Math.sin(start + SEG_ANGLE / 2);
-            const lx = CX + R * 0.75 * Math.cos(start + SEG_ANGLE / 2);
-            const ly = CY + R * 0.75 * Math.sin(start + SEG_ANGLE / 2);
+            // Radial spoke text: text runs from center outward along the segment bisector
+            const midAngleDeg = ((start + SEG_ANGLE / 2) * 180) / Math.PI;
+            // Rotate so text baseline runs along the spoke (no +90)
+            let textRotDeg = midAngleDeg;
+            // Normalize to 0-360
+            const normRot = ((textRotDeg % 360) + 360) % 360;
+            // Flip if text would read inward (right-to-left)
+            const isFlipped = normRot > 90 && normRot < 270;
+            if (isFlipped) textRotDeg += 180;
+            // Split product name into compact groups for spoke layout
+            let words: string[];
+            if (prod.name.includes("+")) {
+              // "Session Replay + Heatmaps" → ["Session", "Replay +", "Heatmaps"]
+              const [before, after] = prod.name.split(/\s*\+\s*/);
+              const bWords = before.split(/\s+/);
+              bWords[bWords.length - 1] += " +";
+              words = [...bWords, after];
+            } else if (prod.name.includes("&")) {
+              // "Guides & Surveys" → ["Guides &", "Surveys"]
+              const [before, after] = prod.name.split(/\s*&\s*/);
+              words = [before + " &", after];
+            } else {
+              words = [prod.name];
+            }
+            // Fixed spacing between words, centered along the spoke
+            // Approximate width of each word in px (bold 13px uppercase ≈ 8.2px/char)
+            const charWidth = 8.2;
+            const wordWidths = words.map((w) => w.length * charWidth);
+            // Gap between adjacent word edges
+            const edgeGap = 8;
+            // Total span = sum of all word widths + gaps between them
+            const totalSpan = wordWidths.reduce((a, b) => a + b, 0) + edgeGap * (words.length - 1);
+            const spokeMid = R * 0.54;
+            // Calculate each word's center position along the spoke
+            const blockStart = spokeMid - totalSpan / 2;
+            // Cumulative positions: each word center = blockStart + sum of previous widths + gaps + half current width
+            const wordPositions = words.map((_, wi) => {
+              let pos = blockStart;
+              for (let j = 0; j < wi; j++) {
+                pos += wordWidths[j] + edgeGap;
+              }
+              pos += wordWidths[wi] / 2; // center of this word
+              return pos;
+            });
             return (
               <g key={i}>
                 <path
@@ -249,24 +335,28 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
                   stroke="#fff"
                   strokeWidth="2"
                 />
-                <text x={mx} y={my - 8} textAnchor="middle" dominantBaseline="middle" fontSize="28" fill="#fff">
-                  {prod.icon}
-                </text>
-                {/* Render product name, split into two lines only if it contains + or & */}
-                {prod.name.includes("+") || prod.name.includes("&") ? (
-                  <>
-                    <text x={lx} y={ly + 8} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="rgba(255,255,255,0.95)" fontFamily="Inter,sans-serif" fontWeight="700">
-                      {prod.name.split(/\s*[+&]\s*/)[0]}
-                    </text>
-                    <text x={lx} y={ly + 22} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="rgba(255,255,255,0.95)" fontFamily="Inter,sans-serif" fontWeight="700">
-                      {prod.name.includes("+") ? "+ " : "& "}{prod.name.split(/\s*[+&]\s*/)[1]}
-                    </text>
-                  </>
-                ) : (
-                  <text x={lx} y={ly + 14} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill="rgba(255,255,255,0.95)" fontFamily="Inter,sans-serif" fontWeight="700">
-                    {prod.name}
-                  </text>
-                )}
+                <g transform={`translate(${CX}, ${CY}) rotate(${textRotDeg})`}>
+                  {words.map((word, wi) => {
+                    const pos = wordPositions[wi];
+                    const wordX = isFlipped ? -pos : pos;
+                    return (
+                      <text
+                        key={wi}
+                        x={wordX}
+                        y={0}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontSize="13"
+                        fill="rgba(255,255,255,0.95)"
+                        fontFamily="Inter,sans-serif"
+                        fontWeight="800"
+                        style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}
+                      >
+                        {word}
+                      </text>
+                    );
+                  })}
+                </g>
               </g>
             );
           })}
