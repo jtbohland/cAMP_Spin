@@ -235,7 +235,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               <p className="text-sm font-semibold text-foreground">How Did You Do?</p>
             </div>
             <p className="text-xs text-muted-foreground mb-3">Rate yourself honestly on each category — this will be compared with your coach's scores.</p>
-            <p className="text-[10px] text-muted-foreground mb-3 italic">1 = Needs work · 2 = Solid · 3 = Nailed it</p>
+            <p className="text-[10px] text-muted-foreground mb-3 italic">🔴 Needs work · 🟡 Getting there · 🟢 Nailed it</p>
 
             <div className="space-y-2 mb-4">
               <RatingRow label="Clarity" description="Were you concise and easy to follow?" value={selfClarity} onChange={setSelfClarity} />
@@ -255,7 +255,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors"
               style={{ background: color }}
             >
-              Submit Self-Evaluation
+              Score: {selfClarity + selfTone + selfCredibility + selfClose}/12 — Submit Self-Evaluation
             </button>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               <p className="text-sm font-semibold text-foreground">Coach Scorecard</p>
             </div>
             <p className="text-xs text-muted-foreground mb-3">Ask your coach to rate you verbally (1-3) on each category, then enter their scores below.</p>
-            <p className="text-[10px] text-muted-foreground mb-3 italic">1 = Needs work · 2 = Solid · 3 = Nailed it</p>
+            <p className="text-[10px] text-muted-foreground mb-3 italic">🔴 Needs work · 🟡 Getting there · 🟢 Nailed it</p>
 
             {/* Coach name */}
             <input
@@ -313,7 +313,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               disabled={ratingLoading}
               className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:opacity-90 transition disabled:opacity-50"
             >
-              {ratingLoading ? "Saving..." : "Submit Coach Scores"}
+              {ratingLoading ? "Saving..." : `Score: ${coachClarity + coachTone + coachCredibility + coachClose}/12 — Submit Coach Scores`}
             </button>
           </div>
         </div>
@@ -333,27 +333,42 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   );
 }
 
+const SCORE_CONFIG: Record<number, { emoji: string; label: string; bg: string; text: string; border: string; hoverBorder: string }> = {
+  1: { emoji: "🔴", label: "Needs work", bg: "bg-red-500", text: "text-white", border: "border-red-500", hoverBorder: "hover:border-red-300" },
+  2: { emoji: "🟡", label: "Getting there", bg: "bg-yellow-400", text: "text-gray-900", border: "border-yellow-400", hoverBorder: "hover:border-yellow-300" },
+  3: { emoji: "🟢", label: "Nailed it", bg: "bg-green-500", text: "text-white", border: "border-green-500", hoverBorder: "hover:border-green-300" },
+};
+
 function RatingRow({ label, description, value, onChange }: { label: string; description: string; value: number; onChange: (v: number) => void }) {
+  const selected = value > 0 ? SCORE_CONFIG[value] : null;
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex-1">
         <span className="text-xs font-medium text-foreground">{label}</span>
         <p className="text-[10px] text-muted-foreground leading-tight">{description}</p>
+        {selected && (
+          <p className="text-[10px] font-semibold mt-0.5 leading-tight">
+            {selected.emoji} {selected.label}
+          </p>
+        )}
       </div>
       <div className="flex gap-1.5">
-        {[1, 2, 3].map((n) => (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={`w-9 h-9 rounded-lg border text-sm font-semibold transition ${
-              value === n
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-foreground border-border hover:border-primary/50"
-            }`}
-          >
-            {n}
-          </button>
-        ))}
+        {([1, 2, 3] as const).map((n) => {
+          const cfg = SCORE_CONFIG[n];
+          return (
+            <button
+              key={n}
+              onClick={() => onChange(n)}
+              className={`w-9 h-9 rounded-lg border text-sm font-semibold transition ${
+                value === n
+                  ? `${cfg.bg} ${cfg.text} ${cfg.border}`
+                  : `bg-background text-foreground border-border ${cfg.hoverBorder}`
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
