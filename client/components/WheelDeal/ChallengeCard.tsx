@@ -393,7 +393,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
           {soloPhase === "debrief" && selfScores && (
             <>
               {aiScores ? (
-                <AiDebriefCard selfScores={selfScores} aiScores={aiScores} />
+                <AiDebriefCard selfScores={selfScores} aiScores={aiScores} product={challenge.product} />
               ) : (
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                   <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
