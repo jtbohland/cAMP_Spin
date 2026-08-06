@@ -1,3 +1,9 @@
+export type ResourceLink = {
+  label: string;
+  url: string;
+  description?: string;
+};
+
 export type ChallengerPlay = {
   reframe: { a: string; gap: string; b: string };
   insight: string;
@@ -22,6 +28,7 @@ export type Product = {
   whatNotToSay: string[];
   connectionPlay: string;
   challengerPlay?: ChallengerPlay;
+  resources?: ResourceLink[];
 };
 
 export type Scenario = {
@@ -206,6 +213,49 @@ export const PRODUCTS: Product[] = [
     },
   },
   {
+    id: "statsig",
+    name: "Statsig",
+    icon: "📈",
+    tagline: "Ship faster, safer — the experimentation platform built for engineers, not spreadsheets.",
+    color: "#6941C6",
+    oneLiner: "Statsig gives engineering teams feature gates, experimentation, and product analytics in one platform — so you can ship to 1% first, measure what matters, and roll back before anyone notices.",
+    happyHour: "\"So you know how every engineering team has that story where they pushed a feature to production, something broke, and they spent the weekend rolling it back? Statsig makes that impossible. You gate every feature, ship it to 1% of users, watch the metrics in real time, and only roll it out when you know it works. Notion went from running a handful of experiments a quarter to 30x their experimentation velocity — and their engineers can do it themselves without waiting on a data team. That's the difference between shipping and gambling.\"",
+    linkedinDrop: "\"Statsig is what happens when you build experimentation for engineers instead of for marketers. Feature gates so you ship safely, A/B testing that runs at warehouse scale, and analytics that plugs directly into your data stack — no proprietary lock-in. Companies like Notion, Ancestry, and Brex run their entire release process through it. The unlock is that your engineers own the full loop — ship, measure, decide — without filing a single ticket to the data team.\"",
+    aiAngle: "Statsig's warehouse-native architecture means your experimentation data lives in your own warehouse — so when your team uses AI tools like Cursor or Claude with Amplitude MCP, they can pull experiment results and feature flag states into their workflow without switching context. The data stays yours and goes wherever your team works.",
+    objections: [
+      { they: "We already use LaunchDarkly for feature flags.", you: "LaunchDarkly is a great feature flag tool. Statsig gives you flags AND experimentation AND analytics in one platform — so you don't just gate features, you measure their impact automatically. Plus Statsig's pricing doesn't penalize you for scaling — no per-seat costs, no MTU surprises. That's usually what gets the conversation started." },
+      { they: "We already use Amplitude Experiment.", you: "Great — you're in the ecosystem. Amplitude Experiment is built for business and marketing teams to run web tests without code. Statsig is built for engineering teams who want to gate every deploy, run experiments at warehouse scale, and own the full ship-measure-decide loop. They're complementary — different buyer, different use case. The question is whether your engineering team is shipping safely today." },
+      { they: "We built feature flags in-house.", you: "Most engineering teams do early on — it's a natural first step. The question is: are you also measuring the impact of every flag? Are you running experiments on them? Do you have automatic rollback if a metric drops? That's where the homegrown approach usually hits a wall — and where your engineers are spending maintenance cycles instead of building product." },
+      { they: "We use Optimizely.", you: "Optimizely is strong for web and content experimentation. Statsig is built for product engineering — server-side flags, warehouse-native analytics, and SDKs that engineers actually want to use. The big difference is Statsig is open-source SDK, no vendor lock-in, and your data stays in your warehouse." },
+    ],
+    followUpAsk: "\"Is your engineering team gating every deploy right now, or are they still shipping straight to production? I'd love to show you what Notion's release process looks like with Statsig — takes about 20 minutes.\"",
+    whatNotToSay: [
+      "Don't position Statsig against Amplitude Experiment — they're complementary. Experiment is for business/marketing, Statsig is for engineering. Different buyer.",
+      "Don't lead with 'we were acquired by Amplitude' — lead with what Statsig does for engineering teams. The Amplitude connection is the bridge, not the headline.",
+      "Don't say 'feature flags' and stop there — LaunchDarkly owns that phrase. Lead with the full loop: ship safely, measure impact, roll back automatically.",
+      "Don't forget the warehouse-native angle — it's the #1 differentiator for technical buyers who are tired of proprietary data silos.",
+    ],
+    connectionPlay: "Bridge to Amplitude Experiment: \"Statsig is the engineering side of experimentation — feature gates, server-side testing, warehouse-native analytics. Amplitude Experiment is the business side — web tests, no-code, marketing-friendly. Together, they cover the full experimentation stack. If the engineering team is nodding, that's Statsig. If marketing is asking about homepage tests, that's Experiment.\"",
+    challengerPlay: {
+      reframe: {
+        a: "Most engineering teams believe their deployment process is safe because they have CI/CD, staging environments, and code review. They push to production, monitor dashboards, and hope nothing breaks.",
+        gap: "What they're actually doing is shipping every change to 100% of users and calling it 'continuous delivery.' There's no gate between the deploy and the user. No automatic rollback if a metric drops. No measurement of whether the change actually helped. Every deploy is a bet — and they find out if it was a bad one from a PagerDuty alert at 2 AM or a churn report three months later. Notion was running a handful of experiments per quarter before Statsig. Now they run 30x more — because their engineers can gate, test, and measure without waiting on anyone.",
+        b: "When every feature ships behind a gate, goes to 1% first, and automatically rolls back if key metrics drop — you stop gambling with your users. Your engineering team ships faster because they're not afraid of breaking things. And every change generates data, so product decisions are validated, not assumed."
+      },
+      insight: "The fastest engineering teams in the world aren't the ones who deploy the most — they're the ones who can prove every deploy made things better. Most teams are shipping code. The best teams are shipping hypotheses.",
+      leadWith: "When your engineering team pushes a feature to production, how long does it take to know if it actually helped or hurt? If the answer is more than a few hours — or if it's 'we check the dashboard next week' — there's a gap between shipping and knowing.",
+      notWith: "Statsig is a feature flagging and experimentation platform acquired by Amplitude. Don't lead with the acquisition, the category, or the feature list. Lead with the risk of shipping without gates.",
+      wheelPrompt: "Don't describe Statsig. Teach me why most engineering teams are gambling every time they push to production — and what the best teams do differently.",
+      wheelHint: "The insight is that deploying to 100% of users without a gate isn't 'continuous delivery' — it's continuous gambling. Lead with what Notion, Ancestry, or Brex learned when they stopped doing that."
+    },
+    resources: [
+      { label: "Statsig Product Overview", url: "https://statsig.com/product", description: "Feature flags, experiments, and analytics in one platform" },
+      { label: "Statsig vs LaunchDarkly", url: "https://statsig.com/compare/launchdarkly", description: "Side-by-side comparison for competitive positioning" },
+      { label: "Notion Case Study", url: "https://statsig.com/customers/notion", description: "How Notion 30x'd their experimentation velocity" },
+      { label: "Warehouse Native Docs", url: "https://docs.statsig.com/statsig-warehouse-native/introduction", description: "Technical deep-dive on warehouse-native architecture" },
+    ],
+  },
+  {
     id: "activation",
     name: "Activation",
     icon: "🚀",
@@ -327,7 +377,7 @@ export const SECTIONS = [
   { key: "connectionPlay", label: "\ud83d\udd17 Connection Play", desc: "Bridge to another Amplitude product." },
 ] as const;
 
-export const WHEEL_COLORS = ["#2962FF", "#7B2FFF", "#00BFA5", "#FF6B35", "#FFB300", "#E91E8C", "#00C853"];
+export const WHEEL_COLORS = ["#2962FF", "#7B2FFF", "#00BFA5", "#FF6B35", "#6941C6", "#FFB300", "#E91E8C", "#00C853"];
 
 export function getRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];

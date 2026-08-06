@@ -19,6 +19,7 @@ export default function Page1Component() {
   const [activeTab, setActiveTab] = useState("welcome");
   const [activeProduct, setActiveProduct] = useState<Product>(PRODUCTS[0]);
   const [isMultiplayer, setIsMultiplayer] = useState(false);
+  const [evalPending, setEvalPending] = useState(false);
   const { run: recordVisit } = useApi("RecordVisit");
 
   // Record page visit on mount — fire and forget
@@ -29,6 +30,16 @@ export default function Page1Component() {
   const handleProductLand = useCallback((product: Product) => {
     setActiveProduct(product);
   }, []);
+
+  const handleEvalPendingChange = useCallback((pending: boolean) => {
+    setEvalPending(pending);
+  }, []);
+
+  const handleTabClick = useCallback((tabId: string) => {
+    // Block tab switching when eval is pending
+    if (evalPending && tabId !== "wheel") return;
+    setActiveTab(tabId);
+  }, [evalPending]);
 
   return (
     <div className="min-h-screen text-foreground font-sans" style={{ background: '#F3EDFC' }}>
@@ -41,66 +52,54 @@ export default function Page1Component() {
         </div>
       </div>
 
-      {/* Mode banner */}
-      <div
-        className="px-5 py-3 border-b flex items-center justify-between"
-        style={{
-          background: isMultiplayer ? "rgba(0,200,83,0.06)" : "rgba(41,98,255,0.04)",
-          borderColor: isMultiplayer ? "rgba(0,200,83,0.2)" : "var(--color-border)",
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="text-lg">{isMultiplayer ? "🧑\u200d🤝\u200d🧑" : "👤"}</span>
-          <div>
-            <span className="text-sm font-semibold text-foreground">
-              {isMultiplayer ? "Multiplayer Mode" : "Solo Mode"}
-            </span>
-            <p className="text-xs text-muted-foreground">
-              {isMultiplayer
-                ? "Practice with a coach — share the link so they can rate you silently on clarity, tone, and close."
-                : "Practice on your own — spin, respond, and self-assess your delivery."}
-            </p>
-          </div>
+      {/* Eval pending banner — visible across all tabs */}
+      {evalPending && activeTab !== "wheel" && (
+        <div className="px-5 py-2.5 bg-red-50 border-b border-red-200 text-center">
+          <p className="text-xs font-semibold text-red-700">
+            🔒 You have an incomplete evaluation. <button onClick={() => setActiveTab("wheel")} className="underline font-bold">Go back to complete it</button>
+          </p>
         </div>
-        <button
-          onClick={() => setIsMultiplayer(!isMultiplayer)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all border"
-          style={{
-            background: isMultiplayer ? "#00C853" : "#2962FF",
-            borderColor: isMultiplayer ? "#00C853" : "#2962FF",
-            color: "#fff",
-          }}
-        >
-          <span>{isMultiplayer ? "👤" : "🧑\u200d🤝\u200d🧑"}</span>
-          {isMultiplayer ? "Switch to Solo" : "Switch to Multiplayer"}
-        </button>
-      </div>
+      )}
 
       {/* Tab nav */}
       <div className="flex bg-card border-b border-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="px-5 py-3 text-[13px] font-medium transition-colors border-b-2"
-            style={{
-              color: activeTab === tab.id ? "var(--color-foreground)" : "var(--color-muted-foreground)",
-              borderBottomColor: activeTab === tab.id ? "#2962FF" : "transparent",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const isLocked = evalPending && tab.id !== "wheel";
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              disabled={isLocked}
+              className="px-5 py-3 text-[13px] font-medium transition-colors border-b-2 disabled:cursor-not-allowed"
+              style={{
+                color: isLocked
+                  ? "var(--color-muted-foreground)"
+                  : activeTab === tab.id
+                  ? "var(--color-foreground)"
+                  : "var(--color-muted-foreground)",
+                borderBottomColor: activeTab === tab.id ? "#2962FF" : "transparent",
+                opacity: isLocked ? 0.4 : 1,
+              }}
+            >
+              {isLocked ? "🔒 " : ""}{tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Body */}
-      <div className="p-5 max-w-[900px] mx-auto">
+      <div className={`p-5 mx-auto ${activeTab === "leaderboard" || activeTab === "analytics" ? "max-w-[1200px]" : "max-w-[900px]"}`}>
         {activeTab === "welcome" && <WelcomeTab onNavigate={setActiveTab} />}
         {activeTab === "cheatsheet" && (
           <CheatSheetsTab activeProduct={activeProduct} onProductChange={setActiveProduct} />
         )}
         {activeTab === "wheel" && (
-          <SpinWheelTab onProductLand={handleProductLand} isMultiplayer={isMultiplayer} />
+          <SpinWheelTab
+            onProductLand={handleProductLand}
+            isMultiplayer={isMultiplayer}
+            onModeToggle={() => setIsMultiplayer((m) => !m)}
+            onEvalPendingChange={handleEvalPendingChange}
+          />
         )}
         {activeTab === "leaderboard" && <LeaderboardTab />}
         {activeTab === "analytics" && <AnalyticsTab />}

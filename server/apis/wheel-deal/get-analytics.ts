@@ -5,6 +5,7 @@ const APPS_DB = "c6e32cf4-ca66-42ae-aeb3-58c84ffae574";
 // Admin emails excluded from analytics
 const ADMIN_EMAILS = [
   "jt.bohland@amplitude.com",
+  "lisa.mullen@amplitude.com",
 ];
 
 export default api({
@@ -42,6 +43,13 @@ export default api({
       avgPeerScore: z.number(),
       gap: z.number(),
       ratingsCount: z.number(),
+    })),
+    profiles: z.array(z.object({
+      userEmail: z.string(),
+      userName: z.string(),
+      role: z.string(),
+      manager: z.string(),
+      region: z.string(),
     })),
   }),
   async run(ctx, { viewAll }) {
@@ -172,6 +180,24 @@ export default api({
       { label: "Fetch visit stats" }
     );
 
+    // Fetch all profiles (for participant directory)
+    const profileRows = await ctx.integrations.db.query(
+      `SELECT user_email, user_name, role, manager, region
+       FROM wheel_deal_profiles
+       WHERE user_email != ALL($1::text[])
+       ORDER BY user_name ASC
+       LIMIT 50`,
+      z.object({
+        user_email: z.string(),
+        user_name: z.string(),
+        role: z.string(),
+        manager: z.string(),
+        region: z.string(),
+      }),
+      [ADMIN_EMAILS],
+      { label: "Fetch participant profiles" }
+    );
+
     return {
       totalSpins: stats[0]?.total_spins ?? 0,
       totalPeeks: stats[0]?.total_peeks ?? 0,
@@ -187,6 +213,13 @@ export default api({
       })),
       userBreakdown,
       peerGaps,
+      profiles: profileRows.map(p => ({
+        userEmail: p.user_email,
+        userName: p.user_name,
+        role: p.role,
+        manager: p.manager,
+        region: p.region,
+      })),
     };
   },
 });

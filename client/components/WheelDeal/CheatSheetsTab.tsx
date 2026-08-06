@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PRODUCTS, type Product } from "@/lib/wheel-deal-data.js";
 import SectionContent from "./SectionContent.js";
+import ResourcesSection from "./ResourcesSection.js";
 
 type CheatSheetsTabProps = {
   activeProduct: Product;
@@ -57,6 +58,8 @@ export default function CheatSheetsTab({ activeProduct, onProductChange }: Cheat
         activeSection={activeSection}
         onSectionChange={setActiveSection}
       />
+
+      <ResourcesSection product={activeProduct} />
     </div>
   );
 }

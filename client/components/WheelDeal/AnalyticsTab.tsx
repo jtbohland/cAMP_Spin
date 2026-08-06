@@ -61,7 +61,7 @@ export default function AnalyticsTab() {
     );
   }
 
-  const analytics = data || { totalSpins: 0, totalPeeks: 0, totalAssessments: 0, totalVisits: 0, uniqueVisitors: 0, productBreakdown: [], userBreakdown: [], peerGaps: [] };
+  const analytics = data || { totalSpins: 0, totalPeeks: 0, totalAssessments: 0, totalVisits: 0, uniqueVisitors: 0, productBreakdown: [], userBreakdown: [], peerGaps: [], profiles: [] };
   const maxSpins = Math.max(...(analytics.productBreakdown || []).map((p: any) => p.spins), 1);
 
   return (
@@ -173,7 +173,7 @@ export default function AnalyticsTab() {
 
       {/* User breakdown */}
       {analytics.userBreakdown && analytics.userBreakdown.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 mb-3">
           <div className="text-xs font-bold text-foreground mb-3">👥 Cohort Activity</div>
           <p className="text-xs text-muted-foreground mb-2">All learners and their spin counts:</p>
           {analytics.userBreakdown.map((u: any, i: number) => (
@@ -184,6 +184,61 @@ export default function AnalyticsTab() {
           ))}
         </div>
       )}
+
+      {/* Participant Directory */}
+      {analytics.profiles && analytics.profiles.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="text-xs font-bold text-foreground mb-1">🪪 Participant Directory</div>
+          <p className="text-[11px] text-muted-foreground mb-3">Registered participants with role, region, and manager info.</p>
+          <div className="space-y-0">
+            {analytics.profiles.map((p: any, i: number) => (
+              <div key={i} className="flex items-center gap-2 py-2 px-1 border-b border-border last:border-b-0">
+                <span className="text-xs font-medium text-foreground flex-1 min-w-0 truncate">{p.userName}</span>
+                <RolePill role={p.role} />
+                <RegionPill region={p.region} />
+                <span className="text-[10px] text-muted-foreground shrink-0 w-28 truncate text-right" title={p.manager}>{p.manager}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// --- Pill components matching cAMP Ascent spec ---
+
+const ROLE_CLASSES: Record<string, string> = {
+  "Velocity AE": "bg-blue-50 text-blue-700 border-blue-200",
+  "Emerging AE": "bg-cyan-50 text-cyan-700 border-cyan-200",
+  "Majors AE": "bg-purple-50 text-purple-700 border-purple-200",
+  "Strat AE": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "SDR": "bg-indigo-50 text-indigo-700 border-indigo-200",
+  "PSM": "bg-orange-50 text-orange-700 border-orange-200",
+  "Renewals": "bg-yellow-50 text-yellow-700 border-yellow-300",
+  "Admin": "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+function RolePill({ role }: { role: string }) {
+  const classes = ROLE_CLASSES[role] || "bg-gray-100 text-gray-600 border-gray-200";
+  return (
+    <span className={`inline-flex items-center whitespace-nowrap px-1.5 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${classes}`}>
+      {role}
+    </span>
+  );
+}
+
+const REGION_CLASSES: Record<string, { emoji: string; classes: string }> = {
+  "NAMER": { emoji: "🌎", classes: "bg-blue-50 text-blue-700 border-blue-200" },
+  "EMEA": { emoji: "🌍", classes: "bg-red-50 text-red-700 border-red-200" },
+  "AAPJ": { emoji: "🌏", classes: "bg-yellow-50 text-yellow-700 border-yellow-300" },
+};
+
+function RegionPill({ region }: { region: string }) {
+  const config = REGION_CLASSES[region] || { emoji: "🌐", classes: "bg-gray-100 text-gray-600 border-gray-200" };
+  return (
+    <span className={`inline-flex items-center gap-0.5 whitespace-nowrap px-1.5 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${config.classes}`}>
+      {config.emoji} {region}
+    </span>
   );
 }

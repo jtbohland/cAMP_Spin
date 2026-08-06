@@ -85,6 +85,13 @@ export default api({
       { label: "Add self_close column" }
     );
 
+    // Pitch duration in seconds (120 - remaining timer seconds when user clicked Done)
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS pitch_seconds INTEGER`,
+      undefined,
+      { label: "Add pitch_seconds column" }
+    );
+
     // Page visits tracking
     await ctx.integrations.db.execute(
       `CREATE TABLE IF NOT EXISTS wheel_deal_visits (
@@ -101,6 +108,83 @@ export default api({
       `CREATE INDEX IF NOT EXISTS idx_wheel_deal_visits_email ON wheel_deal_visits(user_email)`,
       undefined,
       { label: "Create visits email index" }
+    );
+
+    // User profiles table for registration
+    await ctx.integrations.db.execute(
+      `CREATE TABLE IF NOT EXISTS wheel_deal_profiles (
+        user_email TEXT PRIMARY KEY,
+        user_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        manager TEXT NOT NULL,
+        region TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )`,
+      undefined,
+      { label: "Create wheel_deal_profiles table" }
+    );
+
+    // Backfill existing participants (INSERT ... ON CONFLICT DO NOTHING so it's idempotent)
+    await ctx.integrations.db.execute(
+      `INSERT INTO wheel_deal_profiles (user_email, user_name, role, manager, region) VALUES
+        ('kabir.rai@amplitude.com', 'Kabir Rai', 'Majors AE', 'Matt Bennett', 'AAPJ'),
+        ('benjamin.singh@amplitude.com', 'Benjamin Singh', 'Velocity AE', 'Kier Johnson', 'EMEA'),
+        ('salim.alsabaa@amplitude.com', 'Salim Al Sabaa', 'Emerging AE', 'Tansu Yegen', 'EMEA'),
+        ('chris.english@amplitude.com', 'Chris English', 'Majors AE', 'Rob Bow', 'NAMER'),
+        ('rylan.holey@amplitude.com', 'Rylan Holey', 'PSM', 'Nick Iyengar', 'EMEA'),
+        ('levi.verry@amplitude.com', 'Levi Verry', 'Emerging AE', 'Kevin Shain', 'NAMER'),
+        ('gabi.kassatly@amplitude.com', 'Gabi Kassatly', 'Velocity AE', 'Kier Johnson', 'EMEA'),
+        ('tristan.paule@amplitude.com', 'Tristan Paule', 'PSM', 'Nick Iyengar', 'NAMER'),
+        ('katherine.ruane@amplitude.com', 'Kate Ruane', 'SDR', 'Lee Edwards', 'EMEA'),
+        ('tyler.spaan@amplitude.com', 'Tyler Spaan', 'Emerging AE', 'Kevin Shain', 'NAMER'),
+        ('andre.woodroffe@amplitude.com', 'Andre Woodroffe', 'Emerging AE', 'Kevin Shain', 'NAMER'),
+        ('mo.rafati@amplitude.com', 'Mo Rafati', 'Majors AE', 'Joe Skupinsky', 'NAMER'),
+        ('jt.bohland@amplitude.com', 'JT Bohland', 'Admin', 'N/A', 'NAMER')
+      ON CONFLICT (user_email) DO NOTHING`,
+      undefined,
+      { label: "Backfill existing participant profiles" }
+    );
+
+    // AI scoring columns for typed pitch mode
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS pitch_text TEXT`,
+      undefined,
+      { label: "Add pitch_text column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS has_typed_pitch BOOLEAN DEFAULT FALSE`,
+      undefined,
+      { label: "Add has_typed_pitch column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_clarity INTEGER CHECK (ai_clarity BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add ai_clarity column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_conversational INTEGER CHECK (ai_conversational BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add ai_conversational column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_credibility INTEGER CHECK (ai_credibility BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add ai_credibility column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_close INTEGER CHECK (ai_close BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add ai_close column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_score INTEGER CHECK (ai_score BETWEEN 4 AND 12)`,
+      undefined,
+      { label: "Add ai_score column" }
+    );
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS ai_feedback TEXT`,
+      undefined,
+      { label: "Add ai_feedback column (JSON array of 5 bullets)" }
     );
 
     return { success: true };
