@@ -2,7 +2,10 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import confetti from "canvas-confetti";
 import { PRODUCTS, SCENARIOS, type Product, type Challenge, getRandom } from "@/lib/wheel-deal-data.js";
 import { useApi } from "@/hooks/useApi.js";
+import { useApiData } from "@/hooks/useApiData.js";
+import { useSuperblocksUser } from "@superblocksteam/library";
 import ChallengeCard from "./ChallengeCard.js";
+import RegistrationModal from "./RegistrationModal.js";
 
 // Confetti emoji pairs per product
 const CONFETTI_EMOJIS: Record<string, string[]> = {
@@ -10,6 +13,7 @@ const CONFETTI_EMOJIS: Record<string, string[]> = {
   sessionreplay: ["🔥", "🗺️"],
   experimentation: ["🧪", "🥼"],
   guidessurveys: ["🐕", "🧭"],
+  statsig: ["📈", "⚡️"],
   activation: ["🚀", "🎯"],
   aifeedback: ["🦾", "💬"],
   aiassistant: ["🤖", "🗣️"],
@@ -18,10 +22,8 @@ const CONFETTI_EMOJIS: Record<string, string[]> = {
 function fireEmojiConfetti(productId: string) {
   const emojis = CONFETTI_EMOJIS[productId];
   if (!emojis) return;
-  // Fire a separate burst for EACH emoji so both are guaranteed to appear
   for (const emoji of emojis) {
     const shape = confetti.shapeFromText({ text: emoji, scalar: 3 });
-    // Burst from left
     confetti({
       particleCount: 30,
       angle: 60,
@@ -34,7 +36,6 @@ function fireEmojiConfetti(productId: string) {
       drift: 0.5,
       decay: 0.92,
     });
-    // Burst from right
     confetti({
       particleCount: 30,
       angle: 120,
@@ -53,6 +54,9 @@ function fireEmojiConfetti(productId: string) {
 type SpinWheelTabProps = {
   onProductLand: (product: Product) => void;
   isMultiplayer: boolean;
+  onModeToggle: () => void;
+  /** Notify parent when eval becomes pending or completes */
+  onEvalPendingChange: (pending: boolean) => void;
 };
 
 const WHEEL_SIZE = 580;
@@ -82,10 +86,11 @@ function playTick() {
   }
 }
 
-export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheelTabProps) {
+export default function SpinWheelTab({ onProductLand, isMultiplayer, onModeToggle, onEvalPendingChange }: SpinWheelTabProps) {
   const [spinning, setSpinning] = useState(false);
   const [spinAngle, setSpinAngle] = useState(0);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [evalPending, setEvalPending] = useState(false);
   const rafRef = useRef<number | null>(null);
   const lastTickSegRef = useRef<number>(-1);
   const [currentSpinId, setCurrentSpinId] = useState<number | null>(null);
@@ -93,15 +98,42 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
   const { run: recordSpin } = useApi("RecordSpin");
   const { run: updateSpin } = useApi("UpdateSpin");
 
+  // Profile gate: check if user has registered
+  const user = useSuperblocksUser();
+  const { data: profileData, loading: profileLoading, refetch: refetchProfile } = useApiData("GetProfile", {});
+  const [registered, setRegistered] = useState(false);
+
+  const hasProfile = registered || (profileData?.profile !== null && profileData?.profile !== undefined);
+
+  const handleRegistrationComplete = useCallback(() => {
+    setRegistered(true);
+    refetchProfile();
+  }, [refetchProfile]);
+
   useEffect(() => {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
+  // Notify parent when evalPending changes
+  useEffect(() => {
+    onEvalPendingChange(evalPending);
+  }, [evalPending, onEvalPendingChange]);
+
+  // Clear challenge state when switching modes — require a fresh spin
+  useEffect(() => {
+    setChallenge(null);
+    setEvalPending(false);
+    setCurrentSpinId(null);
+  }, [isMultiplayer]);
+
+  const handleEvalComplete = useCallback(() => {
+    setEvalPending(false);
+  }, []);
+
   const spin = useCallback(() => {
-    if (spinning) return;
-    // Cancel any in-flight animation before starting a new spin
+    if (spinning || evalPending) return;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setSpinning(true);
     setChallenge(null);
@@ -119,7 +151,6 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
       const current = startAngle + (target - startAngle) * ease;
       setSpinAngle(current);
 
-      // Tick sound on segment boundary
       const segSize = 360 / NUM_SEGS;
       const currentSeg = Math.floor(((current % 360) + 360) % 360 / segSize);
       if (currentSeg !== lastTickSegRef.current) {
@@ -132,9 +163,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
       } else {
         setSpinAngle(target);
         const normalized = ((target % 360) + 360) % 360;
-        // The pointer is at the top. Segments are drawn clockwise from the top.
-        // After rotating `normalized` degrees clockwise, the segment at the top
-        // is the one that was originally at (360 - normalized) degrees from start.
+        const segSize = 360 / NUM_SEGS;
         const pointerAngle = ((360 - normalized) % 360 + 360) % 360;
         const idx = Math.floor(pointerAngle / segSize) % NUM_SEGS;
         const product = PRODUCTS[idx];
@@ -173,7 +202,6 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
             hint: `Keep it under 2 minutes. Conversational, not salesy. Focus on ${product.name}.`,
           };
         } else {
-          // Challenger Play
           const cp = product.challengerPlay;
           newChallenge = {
             product,
@@ -185,15 +213,13 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
           };
         }
 
-        // Record spin immediately on landing — so it counts on the leaderboard
-        // regardless of whether they complete self-assessment
-        // Store promise in ref so handleSpinRecorded can await it if needed
+        // Record spin immediately on landing
         spinIdPromiseRef.current = recordSpin({
           productId: product.id,
           challengeType: newChallenge.type,
           cheatPeek: false,
           selfScore: null,
-          timerUsed: false,
+          timerUsed: true, // always true now
           timerExpired: false,
           isMultiplayer,
         }).then((result) => {
@@ -205,18 +231,18 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
           return null;
         });
 
-        // Fire emoji confetti on landing
         fireEmojiConfetti(product.id);
 
         setTimeout(() => {
           onProductLand(product);
           setChallenge(newChallenge);
           setSpinning(false);
+          setEvalPending(true); // Lock until eval is done
         }, 300);
       }
     }
     rafRef.current = requestAnimationFrame(animate);
-  }, [spinning, spinAngle, onProductLand, recordSpin, isMultiplayer]);
+  }, [spinning, evalPending, spinAngle, onProductLand, recordSpin, isMultiplayer]);
 
   const handleSpinRecorded = useCallback(async (spinData: {
     productId: string;
@@ -228,8 +254,8 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
     selfClose: number | null;
     timerUsed: boolean;
     timerExpired: boolean;
+    pitchSeconds: number | null;
   }) => {
-    // Await the spinId if it hasn't resolved yet (race condition fix)
     let spinId = currentSpinId;
     if (!spinId && spinIdPromiseRef.current) {
       spinId = await spinIdPromiseRef.current;
@@ -249,24 +275,91 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
         selfClose: spinData.selfClose,
         timerUsed: spinData.timerUsed,
         timerExpired: spinData.timerExpired,
+        pitchSeconds: spinData.pitchSeconds,
       });
     } catch (e) {
       console.error("Failed to update spin:", e);
     }
   }, [updateSpin, currentSpinId]);
 
+  // Show loading skeleton while checking profile
+  if (profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-12 h-12 rounded-full bg-muted animate-pulse mb-4" />
+        <div className="w-48 h-4 rounded bg-muted animate-pulse mb-2" />
+        <div className="w-36 h-3 rounded bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
+  // Show registration modal if no profile
+  if (!hasProfile) {
+    return <RegistrationModal defaultName={user?.name || ""} onComplete={handleRegistrationComplete} />;
+  }
+
+  const spinDisabled = spinning || evalPending;
+
   return (
     <div className="flex flex-col items-center pt-2">
+      {/* Mode toggle — lives inside the wheel tab only */}
+      {(() => {
+        const soloRoundActive = !isMultiplayer && evalPending;
+        return (
+          <div
+            className="w-full max-w-lg mb-4 px-4 py-3 rounded-xl flex items-center justify-between"
+            style={{
+              background: isMultiplayer ? "rgba(0,200,83,0.06)" : "rgba(41,98,255,0.04)",
+              border: `1px solid ${isMultiplayer ? "rgba(0,200,83,0.2)" : "rgba(41,98,255,0.15)"}`,
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">{isMultiplayer ? "\ud83e\uddd1\u200d\ud83e\udd1d\u200d\ud83e\uddd1" : "\ud83d\udc64"}</span>
+              <div>
+                <span className="text-sm font-semibold text-foreground">
+                  {isMultiplayer ? "Multiplayer" : "Solo"}
+                </span>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  {isMultiplayer ? "Practice with a coach" : "Type your pitch, get AI feedback"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => !soloRoundActive && onModeToggle()}
+              disabled={soloRoundActive}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: soloRoundActive ? "#9CA3AF" : isMultiplayer ? "#00C853" : "#2962FF",
+                borderColor: soloRoundActive ? "#9CA3AF" : isMultiplayer ? "#00C853" : "#2962FF",
+                color: "#fff",
+              }}
+              title={soloRoundActive ? "Complete your solo round first" : undefined}
+            >
+              <span>{isMultiplayer ? "\ud83d\udc64" : "\ud83e\uddd1\u200d\ud83e\udd1d\u200d\ud83e\uddd1"}</span>
+              {soloRoundActive ? "\ud83d\udd12 Finish Round" : isMultiplayer ? "Solo" : "Multiplayer"}
+            </button>
+          </div>
+        );
+      })()}
+
       <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 mb-1 drop-shadow-sm">
-        🎰 Spin the Wheel!
+🎰 Spin the Wheel!
       </h1>
       <p className="text-sm text-muted-foreground mb-5 text-center">
         Land on a product. Get a challenge. Practice out loud before checking the cheat sheet.
       </p>
 
+      {/* Eval pending banner */}
+      {evalPending && !spinning && (
+        <div className="w-full max-w-lg mb-4 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-center animate-pulse">
+          <p className="text-xs font-semibold text-red-700">
+            🔒 Complete your evaluation below before spinning again
+          </p>
+        </div>
+      )}
+
       {/* Wheel */}
       <div className="relative mb-5">
-        {/* Pointer */}
         <div
           className="absolute -top-3 left-1/2 -translate-x-1/2 z-10"
           style={{
@@ -291,42 +384,32 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
             const y1 = CY + R * Math.sin(start);
             const x2 = CX + R * Math.cos(end);
             const y2 = CY + R * Math.sin(end);
-            // Radial spoke text: ALL text reads center-outward (standard wheel spoke convention)
             const midAngleDeg = ((start + SEG_ANGLE / 2) * 180) / Math.PI;
             const textRotDeg = midAngleDeg;
-            // Split product name into compact groups for spoke layout
             let words: string[];
             if (prod.name.includes("+")) {
-              // "Session Replay + Heatmaps" → ["Session", "Replay +", "Heatmaps"]
               const [before, after] = prod.name.split(/\s*\+\s*/);
               const bWords = before.split(/\s+/);
               bWords[bWords.length - 1] += " +";
               words = [...bWords, after];
             } else if (prod.name.includes("&")) {
-              // "Guides & Surveys" → ["Guides &", "Surveys"]
               const [before, after] = prod.name.split(/\s*&\s*/);
               words = [before + " &", after];
             } else {
               words = [prod.name];
             }
-            // Fixed spacing between words, centered along the spoke
-            // Approximate width of each word in px (bold 13px uppercase ≈ 8.2px/char)
             const charWidth = 8.2;
             const wordWidths = words.map((w) => w.length * charWidth);
-            // Gap between adjacent word edges
             const edgeGap = 8;
-            // Total span = sum of all word widths + gaps between them
             const totalSpan = wordWidths.reduce((a, b) => a + b, 0) + edgeGap * (words.length - 1);
             const spokeMid = R * 0.54;
-            // Calculate each word's center position along the spoke
             const blockStart = spokeMid - totalSpan / 2;
-            // Cumulative positions: each word center = blockStart + sum of previous widths + gaps + half current width
             const wordPositions = words.map((_, wi) => {
               let pos = blockStart;
               for (let j = 0; j < wi; j++) {
                 pos += wordWidths[j] + edgeGap;
               }
-              pos += wordWidths[wi] / 2; // center of this word
+              pos += wordWidths[wi] / 2;
               return pos;
             });
             return (
@@ -369,14 +452,14 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
       {/* Spin button */}
       <button
         onClick={spin}
-        disabled={spinning}
+        disabled={spinDisabled}
         className="mb-5 px-8 py-3.5 rounded-xl text-sm font-bold text-white transition-all disabled:cursor-not-allowed"
         style={{
-          background: spinning ? "var(--color-muted)" : "#2962FF",
-          opacity: spinning ? 0.5 : 1,
+          background: spinDisabled ? "var(--color-muted)" : "#2962FF",
+          opacity: spinDisabled ? 0.5 : 1,
         }}
       >
-        {spinning ? "Spinning..." : "Spin!"}
+        {spinning ? "Spinning..." : evalPending ? "🔒 Complete Eval First" : "Spin!"}
       </button>
 
       {/* Challenge card */}
@@ -386,10 +469,11 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer }: SpinWheel
           isMultiplayer={isMultiplayer}
           spinId={currentSpinId}
           onSpinRecorded={handleSpinRecorded}
+          onEvalComplete={handleEvalComplete}
         />
       )}
 
-      {!challenge && !spinning && (
+      {!challenge && !spinning && !evalPending && (
         <p className="text-xs text-muted-foreground">
           Spin to get your challenge — then practice out loud before peeking at the cheat sheet.
         </p>
