@@ -9,8 +9,11 @@ export default function ResourcesSection({ product }: ResourcesSectionProps) {
 
   return (
     <div className="mt-5 pt-4 border-t border-border">
-      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
         <span>📚</span> Resources for {product.name}
+      </p>
+      <p className="text-xs text-muted-foreground mb-3 italic">
+        The cheat sheets get you started — these go deeper. Study the source material so you can ditch the script and make the pitch your own.
       </p>
 
       {!resources || resources.length === 0 ? (

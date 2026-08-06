@@ -103,6 +103,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't tell me what Analytics does. Teach me something about my business I didn't know I needed to hear.",
       wheelHint: "Lead with the data argument problem, not the product. Make them feel the gap before you offer the solution."
     },
+    resources: [
+      { label: "Analytics on Spekit", url: "https://app.spekit.co/app/wiki/?topic=0a8cf8ef-a957-4580-a0bd-60d2f6128005&tag=Product%20-%20Analytics", description: "Sales enablement resources for Analytics" },
+    ],
   },
   {
     id: "sessionreplay",
@@ -139,6 +142,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't pitch Session Replay. Show me the moment a team found a bug they didn't know they had.",
       wheelHint: "Tell the story of a specific discovery \u2014 a rage click, a broken button, a confusing flow \u2014 not what the product does."
     },
+    resources: [
+      { label: "Session Replay on Spekit", url: "https://app.spekit.co/app/wiki/?topic=b458fcbc-1d4d-4bba-ae3f-8d997dbed1e3&tag=Product%20-%20Session%20Replay", description: "Sales enablement resources for Session Replay" },
+    ],
   },
   {
     id: "experimentation",
@@ -175,6 +181,10 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't describe Experimentation. Tell me what happens to a company that ships without testing.",
       wheelHint: "Make them feel the cost of slow experimentation \u2014 missed retention signals, expensive rollbacks, guesses masquerading as strategy."
     },
+    resources: [
+      { label: "Experimentation (Feature) on Spekit", url: "https://app.spekit.co/app/wiki/?topic=065970c2-6119-4f5c-a29a-dccb9e849bb7&tag=Product%20-%20Experiment%20(Feature)", description: "Feature experimentation resources" },
+      { label: "Experimentation (Web) on Spekit", url: "https://app.spekit.co/app/wiki/?topic=e4eb46aa-0139-44a2-82b6-0bf9f564c564&tag=Product%20-%20Experiment%20(Web)", description: "Web experimentation resources" },
+    ],
   },
   {
     id: "guidessurveys",
@@ -211,6 +221,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't describe Guides & Surveys. Tell me what it costs a product team when their onboarding doesn't work.",
       wheelHint: "Lead with the gap between what teams think users experience and what users actually experience. The aha moment is the bridge."
     },
+    resources: [
+      { label: "Guides & Surveys on Spekit", url: "https://app.spekit.co/app/wiki/?topic=89d711f3-40b7-4f30-bda5-9a97ffb9101a&tag=Product%20-%20Guides%20and%20Surveys", description: "Sales enablement resources for Guides & Surveys" },
+    ],
   },
   {
     id: "statsig",
@@ -249,10 +262,10 @@ export const PRODUCTS: Product[] = [
       wheelHint: "The insight is that deploying to 100% of users without a gate isn't 'continuous delivery' — it's continuous gambling. Lead with what Notion, Ancestry, or Brex learned when they stopped doing that."
     },
     resources: [
-      { label: "Statsig Product Overview", url: "https://statsig.com/product", description: "Feature flags, experiments, and analytics in one platform" },
-      { label: "Statsig vs LaunchDarkly", url: "https://statsig.com/compare/launchdarkly", description: "Side-by-side comparison for competitive positioning" },
-      { label: "Notion Case Study", url: "https://statsig.com/customers/notion", description: "How Notion 30x'd their experimentation velocity" },
-      { label: "Warehouse Native Docs", url: "https://docs.statsig.com/statsig-warehouse-native/introduction", description: "Technical deep-dive on warehouse-native architecture" },
+      { label: "Statsig on Spekit", url: "https://app.spekit.co/app/wiki/?topic=b997bcaf-b369-422a-97de-532f930b3a63&tag=Product%20-%20Statsig", description: "Sales enablement resources for Statsig" },
+      { label: "Statsig Talk Track", url: "https://docs.google.com/document/d/1hTUt9RohKhpwOOoD1q5doU_N5do-NRAP2jYhtlDVoBg/edit?usp=drive_link", description: "Detailed talk track guide" },
+      { label: "Statsig Pitch Deck", url: "https://docs.google.com/presentation/d/1WF9CXT9P5pI8CoxAxvBJKFX8Oe9F1H3S30hDVWeJPgY/edit?usp=drive_link", description: "Pitch deck for customer presentations" },
+      { label: "Statsig Customer Stories", url: "https://docs.google.com/presentation/d/15NPtE80omJvvCl7ogMlzfzEjLtN9yGP-Fq2WU_xhcXY/edit?usp=sharing", description: "Customer stories and case studies" },
     ],
   },
   {
@@ -290,6 +303,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't describe Activation. Teach me why most companies are optimizing for the wrong thing in their growth funnel.",
       wheelHint: "The reframe is acquisition vs. activation \u2014 getting users in the door vs. getting them to the moment where the product clicks. Lead there."
     },
+    resources: [
+      { label: "Activation on Spekit", url: "https://app.spekit.co/app/wiki/?topic=f642daa6-1af9-4f49-8579-a586e71a5b5c&tag=Product%20-%20Activation", description: "Sales enablement resources for Activation" },
+    ],
   },
   {
     id: "aifeedback",
@@ -326,6 +342,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't describe AI Feedback. Tell me about the insight a company almost missed \u2014 and what would have happened if they had.",
       wheelHint: "The story is about speed and signal \u2014 a pattern hiding in thousands of tickets that almost became a churn crisis. Make it feel urgent."
     },
+    resources: [
+      { label: "AI Feedback on Spekit", url: "https://app.spekit.co/app/wiki/?topic=c7aa2b39-332c-431d-9c08-519adb446ed2&tag=Product%20-%20AI%20Feedback", description: "Sales enablement resources for AI Feedback" },
+    ],
   },
   {
     id: "aiassistant",
@@ -362,6 +381,9 @@ export const PRODUCTS: Product[] = [
       wheelPrompt: "Don't describe AI Assistant. Tell me what a company loses every time someone has to file a ticket to get a data question answered.",
       wheelHint: "The insight is about access and speed \u2014 the cost of the gap between having data and being able to act on it. Lead with the 3-day wait story."
     },
+    resources: [
+      { label: "AI Assistant on Spekit", url: "https://app.spekit.co/app/wiki/?topic=d5189c51-7082-4668-bbdc-c6bf1dd56b1f&tag=Product%20-%20AI%20Assistant", description: "Sales enablement resources for AI Assistant" },
+    ],
   },
 ];
 

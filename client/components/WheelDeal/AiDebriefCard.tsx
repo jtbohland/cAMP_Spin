@@ -1,4 +1,5 @@
 import { useApiData } from "@/hooks/useApiData.js";
+import type { Product } from "@/lib/wheel-deal-data.js";
 
 type SelfScores = {
   clarity: number;
@@ -20,6 +21,7 @@ type AiScores = {
 type AiDebriefCardProps = {
   selfScores: SelfScores;
   aiScores: AiScores;
+  product: Product;
 };
 
 const CATEGORIES = [
@@ -29,7 +31,7 @@ const CATEGORIES = [
   { key: "close" as const, label: "Close" },
 ];
 
-export function AiDebriefCard({ selfScores, aiScores }: AiDebriefCardProps) {
+export function AiDebriefCard({ selfScores, aiScores, product }: AiDebriefCardProps) {
   const selfTotal = selfScores.clarity + selfScores.conversational + selfScores.credibility + selfScores.close;
 
   return (
@@ -138,6 +140,34 @@ export function AiDebriefCard({ selfScores, aiScores }: AiDebriefCardProps) {
 
       {/* Score Trend */}
       <AiScoreTrend />
+
+      {/* Study before you spin again */}
+      {product.resources && product.resources.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="text-xs font-bold text-foreground mb-1 flex items-center gap-1.5">
+            <span>📚</span> Study before you spin again
+          </p>
+          <p className="text-[11px] text-muted-foreground mb-2 italic">
+            Go deeper on {product.name} before your next round.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {product.resources.map((r) => (
+              <a
+                key={r.url}
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-2.5 py-2 transition-all hover:border-primary/40 hover:bg-muted/50"
+              >
+                <span className="text-xs shrink-0">🔗</span>
+                <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                  {r.label}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
