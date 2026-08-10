@@ -17,6 +17,7 @@ export default api({
     aiClose: z.number(),
     aiScore: z.number(),
     aiFeedback: z.array(z.string()),
+    completionScore: z.number(),
   }),
   output: z.object({ success: z.boolean() }),
   async run(ctx, input) {
@@ -29,7 +30,8 @@ export default api({
            ai_credibility = $5,
            ai_close = $6,
            ai_score = $7,
-           ai_feedback = $8
+           ai_feedback = $8,
+           completion_score = $9
        WHERE id = $1`,
       [
         input.spinId,
@@ -40,8 +42,9 @@ export default api({
         input.aiClose,
         input.aiScore,
         JSON.stringify(input.aiFeedback),
+        input.completionScore,
       ],
-      { label: "Record AI scores and pitch text for spin" },
+      { label: "Record AI scores, completion score, and pitch text for spin" },
     );
 
     return { success: true };

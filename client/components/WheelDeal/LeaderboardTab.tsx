@@ -189,7 +189,7 @@ export default function LeaderboardTab() {
                       {/* Avg Self-Eval */}
                       <td className="px-4 py-2.5 text-center">
                         {row.avgSelfEval !== null
-                          ? <span className="text-[13px] text-slate-600">{row.avgSelfEval}/12</span>
+                          ? <span className="text-[13px] text-slate-600">{row.avgSelfEval}/15</span>
                           : <span className="inline-flex items-center whitespace-nowrap px-1.5 py-0.5 rounded-full text-[10px] font-medium border bg-red-50 text-red-700 border-red-200">❌ Missing</span>
                         }
                       </td>
@@ -197,7 +197,7 @@ export default function LeaderboardTab() {
                       {/* Avg AI Coach */}
                       <td className="px-4 py-2.5 text-center">
                         {row.avgAiCoach !== null
-                          ? <span className="text-[13px] text-slate-600">{row.avgAiCoach}/12</span>
+                          ? <span className="text-[13px] text-slate-600">{row.avgAiCoach}/15</span>
                           : <span className="text-xs text-gray-300">—</span>
                         }
                       </td>

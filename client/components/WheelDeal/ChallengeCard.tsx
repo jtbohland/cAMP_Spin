@@ -34,6 +34,7 @@ type ChallengeCardProps = {
     selfConversational: number | null;
     selfCredibility: number | null;
     selfClose: number | null;
+    completionScore: number;
     timerUsed: boolean;
     timerExpired: boolean;
     pitchSeconds: number | null;
@@ -44,6 +45,7 @@ type ChallengeCardProps = {
 const STUDY_DURATION = 30;
 const PITCH_DURATION = 120;
 const MAX_WORDS = 200;
+const MIN_WORDS = 25;
 
 // Phases for solo typed pitch mode
 type SoloPhase = "study" | "pitch" | "selfEval" | "aiScoring" | "debrief";
@@ -63,6 +65,10 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   const [soloPitchSecs, setSoloPitchSecs] = useState(PITCH_DURATION);
   const [pitchText, setPitchText] = useState("");
   const soloPitchSecondsRef = useRef<number | null>(null);
+
+  // ─── COMPLETION SCORE STATE ───
+  const [completionScore, setCompletionScore] = useState(0);
+  const [timerExpiredSolo, setTimerExpiredSolo] = useState(false);
 
   // ─── COMMON EVAL STATE ───
   const [selfClarity, setSelfClarity] = useState(0);
@@ -101,6 +107,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
           if (timerRef.current) clearInterval(timerRef.current);
           setTimerActive(false);
           setTimerDone(true);
+          setCompletionScore(1); // Timer expired in multiplayer
           pitchSecondsRef.current = PITCH_DURATION;
           return 0;
         }
@@ -135,7 +142,8 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
         if (prev <= 1) {
           if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
           soloPitchSecondsRef.current = PITCH_DURATION;
-          setSoloPhase("selfEval");
+          setCompletionScore(1); // Timer expired
+          setTimerExpiredSolo(true);
           return 0;
         }
         return prev - 1;
@@ -143,6 +151,24 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
     }, 1000);
     return () => { if (pitchTimerRef.current) clearInterval(pitchTimerRef.current); };
   }, [isMultiplayer, soloPhase]);
+
+  // Word count
+  const wordCount = useMemo(() => {
+    const trimmed = pitchText.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).length;
+  }, [pitchText]);
+
+  // ─── SOLO: Auto-submit when timer expires and 25+ words ───
+  useEffect(() => {
+    if (!timerExpiredSolo || soloPhase !== "pitch") return;
+    if (wordCount >= MIN_WORDS) {
+      // Has enough words — auto-submit
+      soloPitchSecondsRef.current = PITCH_DURATION;
+      setSoloPhase("selfEval");
+    }
+    // If under MIN_WORDS, stay in pitch phase (user sees "Time's up!" banner)
+  }, [timerExpiredSolo, wordCount, soloPhase]);
 
   // Solo: Start typing transitions from study to pitch
   const handleTypingStart = useCallback(() => {
@@ -155,6 +181,14 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   const handlePitchDone = useCallback(() => {
     if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
     soloPitchSecondsRef.current = PITCH_DURATION - soloPitchSecs;
+    // Calculate completion score: 3 = 30+ sec left, 2 = <30 sec, 1 = expired
+    if (soloPitchSecs >= 30) {
+      setCompletionScore(3);
+    } else if (soloPitchSecs > 0) {
+      setCompletionScore(2);
+    } else {
+      setCompletionScore(1);
+    }
     setSoloPhase("selfEval");
   }, [soloPitchSecs]);
 
@@ -163,13 +197,6 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
     e.preventDefault();
     toast.error("Paste is disabled — type your pitch!");
   }, []);
-
-  // Word count
-  const wordCount = useMemo(() => {
-    const trimmed = pitchText.trim();
-    if (!trimmed) return 0;
-    return trimmed.split(/\s+/).length;
-  }, [pitchText]);
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -183,6 +210,14 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   const handleDone = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     pitchSecondsRef.current = PITCH_DURATION - timerSecs;
+    // Completion score for multiplayer
+    if (timerSecs >= 30) {
+      setCompletionScore(3);
+    } else if (timerSecs > 0) {
+      setCompletionScore(2);
+    } else {
+      setCompletionScore(1);
+    }
     setTimerActive(false);
     setTimerDone(true);
   }, [timerSecs]);
@@ -253,6 +288,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
       selfConversational: selfTone,
       selfCredibility,
       selfClose,
+      completionScore,
       timerUsed: true,
       timerExpired: isMultiplayer ? timerSecs === 0 : soloPitchSecs === 0,
       pitchSeconds: pitchSecs,
@@ -269,7 +305,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
           cheatSheetContent,
           pitchText,
         });
-        if (result) {
+          if (result) {
           setAiScores(result);
           // Record AI scores in DB
           if (spinId) {
@@ -281,8 +317,9 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
                 aiConversational: result.conversational,
                 aiCredibility: result.credibility,
                 aiClose: result.close,
-                aiScore: result.totalScore,
+                aiScore: result.totalScore + completionScore,
                 aiFeedback: result.feedbackBullets,
+                completionScore,
               });
             } catch {
               // non-critical — scoring still shows
@@ -303,7 +340,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
   }, [
     challenge, cheatPeeked, selfClarity, selfTone, selfCredibility, selfClose,
     timerSecs, soloPitchSecs, isMultiplayer, onSpinRecorded, onEvalComplete,
-    scorePitch, recordAiScore, pitchText, cheatSheetContent, spinId,
+    scorePitch, recordAiScore, pitchText, cheatSheetContent, spinId, completionScore,
   ]);
 
   const color = challenge.product.color;
@@ -329,10 +366,15 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
       </div>
 
       {/* Prompt */}
-      <p className="text-[15px] font-semibold text-foreground leading-snug mb-2">
-        &ldquo;{challenge.prompt}&rdquo;
-      </p>
-      <p className="text-xs text-muted-foreground mb-4">{challenge.hint}</p>
+      <div className="rounded-lg border-2 px-4 py-3 mb-4" style={{ borderColor: color, backgroundColor: `${color}08` }}>
+        <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color }}>Your Scenario</p>
+        <p className="text-base font-bold text-foreground leading-snug">
+          &ldquo;{challenge.prompt}&rdquo;
+        </p>
+        {challenge.hint && (
+          <p className="text-xs text-muted-foreground mt-1.5 italic">{challenge.hint}</p>
+        )}
+      </div>
 
       {/* ═══════════ SOLO MODE ═══════════ */}
       {!isMultiplayer && (
@@ -361,6 +403,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               wordCount={wordCount}
               onDone={handlePitchDone}
               color={color}
+              timerExpired={timerExpiredSolo}
             />
           )}
 
@@ -377,6 +420,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               onCloseChange={setSelfClose}
               onSubmit={handleSubmitAssessment}
               color={color}
+              completionScore={completionScore}
             />
           )}
 
@@ -393,11 +437,11 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
           {soloPhase === "debrief" && selfScores && (
             <>
               {aiScores ? (
-                <AiDebriefCard selfScores={selfScores} aiScores={aiScores} product={challenge.product} />
+                <AiDebriefCard selfScores={{ ...selfScores, completion: completionScore }} aiScores={{ ...aiScores, completion: completionScore }} product={challenge.product} />
               ) : (
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                   <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-                    AI scoring unavailable. Your self-evaluation was recorded: {selfClarity + selfTone + selfCredibility + selfClose}/12
+                    AI scoring unavailable. Your self-evaluation was recorded: {selfClarity + selfTone + selfCredibility + selfClose + completionScore}/15
                   </p>
                 </div>
               )}
@@ -445,6 +489,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
                 onEvalComplete();
               }}
               color={color}
+              completionScore={completionScore}
             />
           )}
 
@@ -556,7 +601,7 @@ function StudyPhase({
 }
 
 function PitchPhase({
-  pitchSecs, pitchText, onTextChange, onPaste, wordCount, onDone, color,
+  pitchSecs, pitchText, onTextChange, onPaste, wordCount, onDone, color, timerExpired,
 }: {
   pitchSecs: number;
   pitchText: string;
@@ -565,19 +610,40 @@ function PitchPhase({
   wordCount: number;
   onDone: () => void;
   color: string;
+  timerExpired: boolean;
 }) {
   const timerColor = pitchSecs <= 30 ? "#E53935" : pitchSecs <= 60 ? "#F57C00" : "var(--color-foreground)";
 
   return (
     <div>
+      {/* Time's up banner */}
+      {timerExpired && wordCount < MIN_WORDS && (
+        <div className="bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-700 rounded-lg px-3 py-2 mb-3">
+          <p className="text-xs font-bold text-red-700 dark:text-red-400">⏰ Time's up! Finish your pitch (need {MIN_WORDS - wordCount} more words) to submit.</p>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-3">
         <span className="text-lg">✍️</span>
         <span className="text-xs font-semibold text-foreground">Pitch Phase</span>
-        <span className="text-2xl font-bold font-mono tabular-nums" style={{ color: timerColor }}>
-          {String(Math.floor(pitchSecs / 60)).padStart(2, "0")}:{String(pitchSecs % 60).padStart(2, "0")}
-        </span>
-        <button onClick={onDone} className="px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-[#00C853] hover:bg-[#00a844] transition-colors ml-auto">
-          Done
+        {!timerExpired && (
+          <span className="text-2xl font-bold font-mono tabular-nums" style={{ color: timerColor }}>
+            {String(Math.floor(pitchSecs / 60)).padStart(2, "0")}:{String(pitchSecs % 60).padStart(2, "0")}
+          </span>
+        )}
+        {timerExpired && (
+          <span className="text-sm font-bold text-red-600">⏰ 0:00</span>
+        )}
+        <button
+          onClick={onDone}
+          disabled={wordCount < MIN_WORDS}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ml-auto ${
+            wordCount < MIN_WORDS
+              ? "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 cursor-not-allowed"
+              : "text-white bg-[#00C853] hover:bg-[#00a844]"
+          }`}
+        >
+          {wordCount < MIN_WORDS ? `${MIN_WORDS - wordCount} words to go` : "✅ Submit Pitch"}
         </button>
       </div>
 
@@ -605,13 +671,14 @@ function PitchPhase({
 function SelfEvalSection({
   selfClarity, selfTone, selfCredibility, selfClose,
   onClarityChange, onToneChange, onCredibilityChange, onCloseChange,
-  onSubmit, color,
+  onSubmit, color, completionScore,
 }: {
   selfClarity: number; selfTone: number; selfCredibility: number; selfClose: number;
   onClarityChange: (v: number) => void; onToneChange: (v: number) => void;
   onCredibilityChange: (v: number) => void; onCloseChange: (v: number) => void;
-  onSubmit: () => void; color: string;
+  onSubmit: () => void; color: string; completionScore: number;
 }) {
+  const total = selfClarity + selfTone + selfCredibility + selfClose + completionScore;
   return (
     <div className="mt-3 pt-3 border-t border-border">
       <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
@@ -628,6 +695,33 @@ function SelfEvalSection({
           <RatingRow label="Conversational Tone" description="Did it feel natural, not scripted?" value={selfTone} onChange={onToneChange} />
           <RatingRow label="Credibility" description="Did you speak about the product correctly?" value={selfCredibility} onChange={onCredibilityChange} />
           <RatingRow label="Close" description="Did you end with a compelling ask?" value={selfClose} onChange={onCloseChange} />
+          {/* Completion row — auto-filled & locked */}
+          <div className="flex items-center justify-between gap-2 opacity-80">
+            <div className="flex-1">
+              <span className="text-xs font-medium text-foreground">Completion</span>
+              <p className="text-[10px] text-muted-foreground leading-tight">Did you finish before time ran out?</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">Auto</span>
+              <div className="flex gap-1.5">
+                {([1, 2, 3] as const).map((n) => {
+                  const cfg = SCORE_CONFIG[n];
+                  return (
+                    <div
+                      key={n}
+                      className={`w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center ${
+                        completionScore === n
+                          ? `${cfg.bg} ${cfg.text} ${cfg.border}`
+                          : "bg-background text-muted-foreground/30 border-border"
+                      }`}
+                    >
+                      {n}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
 
         <button
@@ -641,7 +735,7 @@ function SelfEvalSection({
           className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-colors"
           style={{ background: color }}
         >
-          Score: {selfClarity + selfTone + selfCredibility + selfClose}/12 — Submit Self-Evaluation
+          Score: {total}/15 — Submit Self-Evaluation
         </button>
       </div>
     </div>
