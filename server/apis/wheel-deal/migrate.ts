@@ -187,6 +187,13 @@ export default api({
       { label: "Add ai_feedback column (JSON array of 5 bullets)" }
     );
 
+    // Completion score: auto-calculated based on timer (3 = 30+ sec remaining, 2 = <30 sec, 1 = expired)
+    await ctx.integrations.db.execute(
+      `ALTER TABLE wheel_deal_spins ADD COLUMN IF NOT EXISTS completion_score INTEGER CHECK (completion_score BETWEEN 1 AND 3)`,
+      undefined,
+      { label: "Add completion_score column" }
+    );
+
     return { success: true };
   },
 });

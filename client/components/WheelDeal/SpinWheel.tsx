@@ -252,6 +252,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer, onModeToggl
     selfConversational: number | null;
     selfCredibility: number | null;
     selfClose: number | null;
+    completionScore: number;
     timerUsed: boolean;
     timerExpired: boolean;
     pitchSeconds: number | null;
@@ -273,6 +274,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer, onModeToggl
         selfConversational: spinData.selfConversational,
         selfCredibility: spinData.selfCredibility,
         selfClose: spinData.selfClose,
+        completionScore: spinData.completionScore,
         timerUsed: spinData.timerUsed,
         timerExpired: spinData.timerExpired,
         pitchSeconds: spinData.pitchSeconds,

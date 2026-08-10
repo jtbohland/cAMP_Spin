@@ -6,6 +6,7 @@ type SelfScores = {
   conversational: number;
   credibility: number;
   close: number;
+  completion: number;
 };
 
 type AiScores = {
@@ -13,6 +14,7 @@ type AiScores = {
   conversational: number;
   credibility: number;
   close: number;
+  completion: number;
   totalScore: number;
   feedbackBullets: string[];
   isCopied: boolean;
@@ -29,10 +31,11 @@ const CATEGORIES = [
   { key: "conversational" as const, label: "Tone" },
   { key: "credibility" as const, label: "Credibility" },
   { key: "close" as const, label: "Close" },
+  { key: "completion" as const, label: "Completion" },
 ];
 
 export function AiDebriefCard({ selfScores, aiScores, product }: AiDebriefCardProps) {
-  const selfTotal = selfScores.clarity + selfScores.conversational + selfScores.credibility + selfScores.close;
+  const selfTotal = selfScores.clarity + selfScores.conversational + selfScores.credibility + selfScores.close + selfScores.completion;
 
   return (
     <div className="bg-card border border-primary/20 rounded-xl p-5 shadow-lg animate-in fade-in slide-in-from-bottom-2">
@@ -53,11 +56,11 @@ export function AiDebriefCard({ selfScores, aiScores, product }: AiDebriefCardPr
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-center">
           <p className="text-xs text-muted-foreground mb-1">Your Self-Score</p>
-          <p className="text-2xl font-bold text-foreground">{selfTotal}<span className="text-sm text-muted-foreground">/12</span></p>
+          <p className="text-2xl font-bold text-foreground">{selfTotal}<span className="text-sm text-muted-foreground">/15</span></p>
         </div>
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-center">
           <p className="text-xs text-muted-foreground mb-1">AI Coach</p>
-          <p className="text-2xl font-bold text-primary">{aiScores.totalScore}<span className="text-sm text-muted-foreground">/12</span></p>
+          <p className="text-2xl font-bold text-primary">{aiScores.totalScore + aiScores.completion}<span className="text-sm text-muted-foreground">/15</span></p>
         </div>
       </div>
 
@@ -179,7 +182,7 @@ function AiScoreTrend() {
 
   // Reverse so oldest is first (left) and newest is last (right)
   const scores = [...data.scores].reverse();
-  const maxScore = 12;
+  const maxScore = 15;
 
   return (
     <div className="mt-4 pt-4 border-t border-border">

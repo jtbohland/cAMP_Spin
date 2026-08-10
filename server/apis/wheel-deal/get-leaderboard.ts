@@ -44,7 +44,7 @@ export default api({
         AVG(s.pitch_seconds)::float as avg_pitch_time,
         AVG(
           CASE WHEN s.self_clarity IS NOT NULL THEN
-            COALESCE(s.self_clarity, 0) + COALESCE(s.self_conversational, 0) + COALESCE(s.self_credibility, 0) + COALESCE(s.self_close, 0)
+            COALESCE(s.self_clarity, 0) + COALESCE(s.self_conversational, 0) + COALESCE(s.self_credibility, 0) + COALESCE(s.self_close, 0) + COALESCE(s.completion_score, 0)
           END
         )::float as avg_self_eval,
         (
@@ -54,7 +54,7 @@ export default api({
           WHERE s2.user_email = s.user_email
         ) as avg_coach_eval,
         AVG(
-          CASE WHEN s.has_typed_pitch = true AND s.ai_score IS NOT NULL THEN s.ai_score END
+          CASE WHEN s.has_typed_pitch = true AND s.ai_score IS NOT NULL THEN s.ai_score + COALESCE(s.completion_score, 0) END
         )::float as avg_ai_coach
       FROM wheel_deal_spins s
       LEFT JOIN wheel_deal_profiles p ON p.user_email = s.user_email

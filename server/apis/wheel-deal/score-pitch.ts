@@ -46,7 +46,7 @@ export default api({
   async run(ctx, input) {
     const systemPrompt = `You are a sales pitch coach for Amplitude's sales team. You evaluate typed sales pitches on a strict 4-category rubric.
 
-SCORING RUBRIC (each category 1-3, total /12):
+SCORING RUBRIC (each category 1-3, AI total /12; a separate auto-calculated Completion score 1-3 is added separately to make the grand total /15):
 - **Clarity** (1-3): Was the pitch concise, jargon-free, and easy to follow? 3 = crystal clear, 1 = confusing or rambling.
 - **Conversational Tone** (1-3): Did the pitch feel natural and human? 3 = sounds like talking to a friend, 1 = robotic or scripted.
 - **Credibility** (1-3): Did they demonstrate real product knowledge and use concrete examples? 3 = specific and believable, 1 = vague or incorrect.

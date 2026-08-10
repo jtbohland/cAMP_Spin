@@ -15,6 +15,7 @@ export default api({
     selfConversational: z.number().nullable(),
     selfCredibility: z.number().nullable(),
     selfClose: z.number().nullable(),
+    completionScore: z.number().nullable(),
     timerUsed: z.boolean(),
     timerExpired: z.boolean(),
     pitchSeconds: z.number().nullable(),
@@ -29,12 +30,12 @@ export default api({
       `UPDATE wheel_deal_spins
        SET cheat_peek = $2, self_score = $3, timer_used = $4, timer_expired = $5,
            self_clarity = $6, self_conversational = $7, self_credibility = $8, self_close = $9,
-           pitch_seconds = $10
+           pitch_seconds = $10, completion_score = $11
        WHERE id = $1`,
       [input.spinId, input.cheatPeek, selfScore, input.timerUsed, input.timerExpired,
        input.selfClarity, input.selfConversational, input.selfCredibility, input.selfClose,
-       input.pitchSeconds],
-      { label: "Update spin with 4C self-assessment and pitch time" }
+       input.pitchSeconds, input.completionScore],
+      { label: "Update spin with 4C self-assessment, completion score, and pitch time" }
     );
 
     return { success: true };
