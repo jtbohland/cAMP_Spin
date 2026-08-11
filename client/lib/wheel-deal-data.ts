@@ -262,6 +262,8 @@ export const PRODUCTS: Product[] = [
       wheelHint: "The insight is that deploying to 100% of users without a gate isn't 'continuous delivery' — it's continuous gambling. Lead with what Notion, Ancestry, or Brex learned when they stopped doing that."
     },
     resources: [
+      { label: "Statsig Overview", url: "https://academy.amplitude.com/statsig-overview", description: "7-min Amplitude Academy course" },
+      { label: "Statsig Migration Guide", url: "https://docs.google.com/document/d/1ty44HjkNk3Wxc4UqO9yfmuErq-aaZcwwcN22qAf7A5o/edit?tab=t.0", description: "Guide for migrating to Statsig" },
       { label: "Statsig on Spekit", url: "https://app.spekit.co/app/wiki/?topic=b997bcaf-b369-422a-97de-532f930b3a63&tag=Product%20-%20Statsig", description: "Sales enablement resources for Statsig" },
       { label: "Statsig Talk Track", url: "https://docs.google.com/document/d/1hTUt9RohKhpwOOoD1q5doU_N5do-NRAP2jYhtlDVoBg/edit?usp=drive_link", description: "Detailed talk track guide" },
       { label: "Statsig Pitch Deck", url: "https://docs.google.com/presentation/d/1WF9CXT9P5pI8CoxAxvBJKFX8Oe9F1H3S30hDVWeJPgY/edit?usp=drive_link", description: "Pitch deck for customer presentations" },
