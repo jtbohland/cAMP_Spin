@@ -8,10 +8,15 @@ const ROLES = [
   "Emerging AE",
   "Majors AE",
   "Strat AE",
+  "SE",
   "PSM",
+  "TSM",
   "Renewals",
   "Admin",
 ];
+
+// Sentinel value for the "my manager isn't listed" write-in path
+const MANAGER_OTHER = "Other";
 
 const MANAGERS = [
   "Adam Yapkowitz",
@@ -39,6 +44,7 @@ const MANAGERS = [
   "Rob Bow",
   "Shawn Hensley",
   "Tansu Yegen",
+  MANAGER_OTHER,
 ];
 
 const REGIONS = [
@@ -56,15 +62,24 @@ export default function RegistrationModal({ defaultName, onComplete }: Registrat
   const [name, setName] = useState(defaultName);
   const [role, setRole] = useState("");
   const [manager, setManager] = useState("");
+  const [otherManager, setOtherManager] = useState("");
   const [region, setRegion] = useState("");
   const { run: saveProfile, loading } = useApi("SaveProfile");
 
-  const isComplete = name.trim() !== "" && role !== "" && manager !== "" && region !== "";
+  const isOtherManager = manager === MANAGER_OTHER;
+  // When "Other" is picked we save the typed name, so analytics groups by a real person
+  const resolvedManager = isOtherManager ? otherManager.trim() : manager;
+
+  const isComplete =
+    name.trim() !== "" &&
+    role !== "" &&
+    region !== "" &&
+    resolvedManager !== "";
 
   const handleSubmit = useCallback(async () => {
     if (!isComplete) return;
     try {
-      await saveProfile({ name: name.trim(), role, manager, region });
+      await saveProfile({ name: name.trim(), role, manager: resolvedManager, region });
       toast.success("Profile saved! Let's spin! 🎡");
       onComplete();
     } catch (error) {
@@ -74,7 +89,7 @@ export default function RegistrationModal({ defaultName, onComplete }: Registrat
           : String(error);
       toast.error("Error saving profile: " + message);
     }
-  }, [isComplete, name, role, manager, region, saveProfile, onComplete]);
+  }, [isComplete, name, role, resolvedManager, region, saveProfile, onComplete]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(74, 29, 142, 0.85)" }}>
@@ -121,7 +136,11 @@ export default function RegistrationModal({ defaultName, onComplete }: Registrat
             <label className="block text-xs font-semibold text-foreground mb-1.5">Manager</label>
             <select
               value={manager}
-              onChange={(e) => setManager(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setManager(next);
+                if (next !== MANAGER_OTHER) setOtherManager("");
+              }}
               className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#4A1D8E]/50 focus:border-[#4A1D8E] appearance-none"
               style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
             >
@@ -130,6 +149,17 @@ export default function RegistrationModal({ defaultName, onComplete }: Registrat
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
+
+            {isOtherManager && (
+              <input
+                type="text"
+                value={otherManager}
+                onChange={(e) => setOtherManager(e.target.value)}
+                placeholder="Manager's first and last name"
+                autoFocus
+                className="mt-2 w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#4A1D8E]/50 focus:border-[#4A1D8E]"
+              />
+            )}
           </div>
 
           {/* Region */}
