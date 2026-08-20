@@ -7,8 +7,10 @@ const ROLE_CLASSES: Record<string, string> = {
   "Emerging AE": "bg-cyan-50 text-cyan-700 border-cyan-200",
   "Majors AE": "bg-purple-50 text-purple-700 border-purple-200",
   "Strat AE": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "SE": "bg-rose-50 text-rose-700 border-rose-200",
   "SDR": "bg-indigo-50 text-indigo-700 border-indigo-200",
   "PSM": "bg-orange-50 text-orange-700 border-orange-200",
+  "TSM": "bg-teal-50 text-teal-700 border-teal-200",
   "Renewals": "bg-yellow-50 text-yellow-700 border-yellow-300",
   "Admin": "bg-gray-100 text-gray-600 border-gray-200",
 };
