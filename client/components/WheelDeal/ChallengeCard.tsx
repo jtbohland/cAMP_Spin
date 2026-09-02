@@ -22,9 +22,17 @@ type AiScores = {
   isCopied: boolean;
 };
 
+// ─── ADMIN DEMO MODE ───
+const ADMIN_EMAILS = [
+  "jt.bohland@amplitude.com",
+  "lisa.mullen@amplitude.com",
+];
+const ADMIN_TICK_MS = 200; // 5× faster timers for admins (200ms vs 1000ms)
+
 type ChallengeCardProps = {
   challenge: Challenge;
   isMultiplayer: boolean;
+  isAdmin: boolean;
   spinId: number | null;
   onSpinRecorded: (data: {
     productId: string;
@@ -50,7 +58,8 @@ const MIN_WORDS = 25;
 // Phases for solo typed pitch mode
 type SoloPhase = "study" | "pitch" | "selfEval" | "aiScoring" | "debrief";
 
-export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpinRecorded, onEvalComplete }: ChallengeCardProps) {
+export default function ChallengeCard({ challenge, isMultiplayer, isAdmin, spinId, onSpinRecorded, onEvalComplete }: ChallengeCardProps) {
+  const tickMs = isAdmin ? ADMIN_TICK_MS : 1000;
   // ─── MULTIPLAYER STATE (verbal pitch, unchanged) ───
   const [showCheat, setShowCheat] = useState(false);
   const [cheatPeeked, setCheatPeeked] = useState(false);
@@ -113,9 +122,9 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
         }
         return prev - 1;
       });
-    }, 1000);
+    }, tickMs);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [isMultiplayer]);
+  }, [isMultiplayer, tickMs]);
 
   // ─── SOLO: Study phase countdown ───
   useEffect(() => {
@@ -130,9 +139,9 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
         }
         return prev - 1;
       });
-    }, 1000);
+    }, tickMs);
     return () => { if (studyTimerRef.current) clearInterval(studyTimerRef.current); };
-  }, [isMultiplayer, soloPhase]);
+  }, [isMultiplayer, soloPhase, tickMs]);
 
   // ─── SOLO: Pitch phase countdown ───
   useEffect(() => {
@@ -148,9 +157,9 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
         }
         return prev - 1;
       });
-    }, 1000);
+    }, tickMs);
     return () => { if (pitchTimerRef.current) clearInterval(pitchTimerRef.current); };
-  }, [isMultiplayer, soloPhase]);
+  }, [isMultiplayer, soloPhase, tickMs]);
 
   // Word count
   const wordCount = useMemo(() => {
@@ -191,6 +200,23 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
     }
     setSoloPhase("selfEval");
   }, [soloPitchSecs]);
+
+  // ─── ADMIN: Skip to eval (bypasses timer + word count) ───
+  const handleAdminSkipSolo = useCallback(() => {
+    if (studyTimerRef.current) clearInterval(studyTimerRef.current);
+    if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
+    soloPitchSecondsRef.current = 1; // nominal value
+    setCompletionScore(3); // full marks for demo
+    setSoloPhase("selfEval");
+  }, []);
+
+  const handleAdminSkipMultiplayer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    pitchSecondsRef.current = 1;
+    setCompletionScore(3);
+    setTimerActive(false);
+    setTimerDone(true);
+  }, []);
 
   // Solo: Block paste
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
@@ -390,6 +416,8 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               onTextChange={handleTextChange}
               onPaste={handlePaste}
               wordCount={wordCount}
+              isAdmin={isAdmin}
+              onSkip={handleAdminSkipSolo}
             />
           )}
 
@@ -404,6 +432,8 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
               onDone={handlePitchDone}
               color={color}
               timerExpired={timerExpiredSolo}
+              isAdmin={isAdmin}
+              onSkip={handleAdminSkipSolo}
             />
           )}
 
@@ -460,6 +490,8 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
             timerDone={timerDone}
             pitchSeconds={pitchSecondsRef.current}
             onDone={handleDone}
+            isAdmin={isAdmin}
+            onSkip={handleAdminSkipMultiplayer}
           />
 
           {/* Cheat sheet toggle */}
@@ -549,7 +581,7 @@ export default function ChallengeCard({ challenge, isMultiplayer, spinId, onSpin
 // ═══════════ SUB-COMPONENTS ═══════════
 
 function StudyPhase({
-  studySecs, challenge, color, onTypingStart, pitchText, onTextChange, onPaste, wordCount,
+  studySecs, challenge, color, onTypingStart, pitchText, onTextChange, onPaste, wordCount, isAdmin, onSkip,
 }: {
   studySecs: number;
   challenge: Challenge;
@@ -559,6 +591,8 @@ function StudyPhase({
   onTextChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onPaste: (e: React.ClipboardEvent) => void;
   wordCount: number;
+  isAdmin: boolean;
+  onSkip: () => void;
 }) {
   return (
     <div>
@@ -569,6 +603,14 @@ function StudyPhase({
         <span className="text-lg font-bold font-mono tabular-nums text-amber-600">
           0:{String(studySecs).padStart(2, "0")}
         </span>
+        {isAdmin && (
+          <button
+            onClick={onSkip}
+            className="ml-auto px-2.5 py-1 rounded-md text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 hover:bg-amber-200 transition-colors"
+          >
+            ⚡ Skip to Eval
+          </button>
+        )}
       </div>
 
       <p className="text-[11px] text-muted-foreground mb-3 italic">
@@ -601,7 +643,7 @@ function StudyPhase({
 }
 
 function PitchPhase({
-  pitchSecs, pitchText, onTextChange, onPaste, wordCount, onDone, color, timerExpired,
+  pitchSecs, pitchText, onTextChange, onPaste, wordCount, onDone, color, timerExpired, isAdmin, onSkip,
 }: {
   pitchSecs: number;
   pitchText: string;
@@ -611,6 +653,8 @@ function PitchPhase({
   onDone: () => void;
   color: string;
   timerExpired: boolean;
+  isAdmin: boolean;
+  onSkip: () => void;
 }) {
   const timerColor = pitchSecs <= 30 ? "#E53935" : pitchSecs <= 60 ? "#F57C00" : "var(--color-foreground)";
 
@@ -636,15 +680,23 @@ function PitchPhase({
         )}
         <button
           onClick={onDone}
-          disabled={wordCount < MIN_WORDS}
-          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ml-auto ${
-            wordCount < MIN_WORDS
+          disabled={wordCount < MIN_WORDS && !isAdmin}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${isAdmin ? "ml-0" : "ml-auto"} ${
+            wordCount < MIN_WORDS && !isAdmin
               ? "bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700 cursor-not-allowed"
               : "text-white bg-[#00C853] hover:bg-[#00a844]"
           }`}
         >
-          {wordCount < MIN_WORDS ? `${MIN_WORDS - wordCount} words to go` : "✅ Submit Pitch"}
+          {wordCount < MIN_WORDS && !isAdmin ? `${MIN_WORDS - wordCount} words to go` : "✅ Submit Pitch"}
         </button>
+        {isAdmin && (
+          <button
+            onClick={onSkip}
+            className="ml-auto px-2.5 py-1 rounded-md text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 hover:bg-amber-200 transition-colors"
+          >
+            ⚡ Skip to Eval
+          </button>
+        )}
       </div>
 
       <p className="text-[11px] text-muted-foreground mb-2 italic">
@@ -743,9 +795,9 @@ function SelfEvalSection({
 }
 
 function MultiplayerTimerSection({
-  timerSecs, timerActive, timerDone, pitchSeconds, onDone,
+  timerSecs, timerActive, timerDone, pitchSeconds, onDone, isAdmin, onSkip,
 }: {
-  timerSecs: number; timerActive: boolean; timerDone: boolean; pitchSeconds: number | null; onDone: () => void;
+  timerSecs: number; timerActive: boolean; timerDone: boolean; pitchSeconds: number | null; onDone: () => void; isAdmin: boolean; onSkip: () => void;
 }) {
   const timerColor = timerSecs <= 30 ? "#E53935" : timerSecs <= 60 ? "#F57C00" : "var(--color-foreground)";
   const pitchTimeDisplay = pitchSeconds !== null
@@ -760,6 +812,11 @@ function MultiplayerTimerSection({
       {timerActive && (
         <button onClick={onDone} className="px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-[#00C853] hover:bg-[#00a844] transition-colors">
           Done
+        </button>
+      )}
+      {!timerDone && isAdmin && (
+        <button onClick={onSkip} className="px-3 py-1.5 rounded-md text-xs font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors">
+          ⚡ Skip to Eval
         </button>
       )}
       {timerSecs === 0 && !timerDone && (

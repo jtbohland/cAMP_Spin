@@ -469,6 +469,7 @@ export default function SpinWheelTab({ onProductLand, isMultiplayer, onModeToggl
         <ChallengeCard
           challenge={challenge}
           isMultiplayer={isMultiplayer}
+          isAdmin={["jt.bohland@amplitude.com", "lisa.mullen@amplitude.com"].includes(user?.email ?? "")}
           spinId={currentSpinId}
           onSpinRecorded={handleSpinRecorded}
           onEvalComplete={handleEvalComplete}
