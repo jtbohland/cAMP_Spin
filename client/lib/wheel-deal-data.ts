@@ -77,7 +77,7 @@ export const PRODUCTS: Product[] = [
     oneLiner: "Amplitude Analytics shows you exactly what users do inside your product \u2014 so your team stops guessing and starts growing.",
     happyHour: "\"Okay so \u2014 you know how at most companies, product and marketing are always fighting about whose numbers are right? Everyone's got a different spreadsheet, nobody agrees on what's actually driving growth. We fix that. Put everything in one place. I've seen companies completely flip their strategy when they realized their 'best' marketing channel was actually churning customers out the back door. That's a board meeting conversation. Want to grab 30 minutes next week?\"",
     linkedinDrop: "\"Yeah! So basically \u2014 you know how companies say they're 'data-driven' but nobody can actually answer a simple question like 'why did retention drop last month?' We make that answerable in seconds. Product sees what's driving users to stay. Marketing sees which campaigns turn into actual customers \u2014 not just signups. Same tool, same truth. It sounds obvious but most companies don't have it.\"",
-    aiAngle: "AI Assistant sits on top of your analytics and answers questions in plain English \u2014 no SQL, no analyst needed. Ask 'why did retention drop last week?' and get an answer in 30 seconds. With Amplitude MCP, that same intelligence works inside Claude, Cursor, or Figma \u2014 wherever your team already lives.",
+    aiAngle: "With Amplitude MCP, your behavioral data goes wherever your team already works \u2014 Claude, Cursor, or Figma. Ask 'why did retention drop last week?' from the tool you're already in and get an answer grounded in your real product data. No tab-switching, no waiting on a data pull.",
     objections: [
       { they: "We already use Google Analytics.", you: "GA is great for traffic \u2014 who came and from where. Amplitude answers what they did after they arrived, which features drove them to stay, and why they churned. Different question, different tool." },
       { they: "We built something internally.", you: "Most teams do early on. The question is what it's costing your engineers to maintain it vs. building your actual product. That's usually where the real conversation starts." },
@@ -349,45 +349,6 @@ export const PRODUCTS: Product[] = [
       { label: "AI Feedback on Spekit", url: "https://app.spekit.co/app/wiki/?topic=c7aa2b39-332c-431d-9c08-519adb446ed2&tag=Product%20-%20AI%20Feedback", description: "Sales enablement resources for AI Feedback" },
     ],
   },
-  {
-    id: "aiassistant",
-    name: "AI Assistant",
-    icon: "🤖",
-    tagline: "Anyone on your team gets answers from your data \u2014 in plain English, in seconds, no analyst needed.",
-    color: "#00C853",
-    oneLiner: "Amplitude AI Assistant is a built-in AI that answers questions about your product data in plain English \u2014 so anyone can get insights without knowing SQL or waiting for a data analyst.",
-    happyHour: "\"We're trying to make it so that anyone at a company \u2014 not just the data team \u2014 can answer their own questions. You shouldn't have to file a ticket and wait three days to know if your new feature is working. You just ask. In plain English. And you get a real answer in 30 seconds. One of our customers went from 20 people using analytics to 80 in a single month. That's not a product update \u2014 that's a culture shift. I'd love to show you what that unlocks.\"",
-    linkedinDrop: "\"It's like having a really smart analyst available 24/7 who never gets annoyed when you ask the same question twice. You type what you want to know, it builds the chart and explains what it means. And it proactively tells you when something weird is happening with your metrics \u2014 before you even think to ask. Best part? With MCP Server, that same power works inside Claude, ChatGPT, Cursor, and Figma \u2014 wherever your team already lives.\"",
-    aiAngle: "Amplitude MCP Server extends AI Assistant to any AI tool \u2014 Claude, ChatGPT, Cursor, Figma. Your behavioral data travels with your team. No tab-switching, no waiting, no ticket.",
-    objections: [
-      { they: "We have a data team for this.", you: "Your data team is probably overwhelmed with ad-hoc requests. AI Assistant doesn't replace them \u2014 it handles the routine questions so they can focus on the analysis that actually requires human judgment." },
-      { they: "Our team already uses ChatGPT for data questions.", you: "ChatGPT doesn't know your data. Amplitude AI Assistant is trained on your actual behavioral data \u2014 it gives you real answers about your real users, not generic advice." },
-      { they: "We already have a BI tool.", you: "BI tools are great for dashboards. AI Assistant is conversational \u2014 you ask a question in plain English and get an answer. No building a report, no waiting for a data pull." },
-    ],
-    followUpAsk: "\"What's the last question you had to wait more than a day to get answered about your product? I'd love to show you how fast that answer would come back.\"",
-    whatNotToSay: [
-      "Don't say 'AI chatbot' \u2014 it undersells it. It's a behavioral intelligence layer.",
-      "Don't lead with the MCP angle to a non-technical audience \u2014 lead with the 30-second answer story.",
-      "Don't make it sound like it replaces your data team \u2014 it democratizes access to data.",
-      "Don't forget to connect it to real examples \u2014 'how many users completed onboarding last week' is a better demo than abstract capabilities.",
-    ],
-    connectionPlay: "Bridge to Analytics: \"AI Assistant is the interface on top of your analytics data \u2014 the way you make that data accessible to everyone, not just the people who know how to build charts. The more complete your Analytics setup, the smarter the Assistant gets.\"",
-    challengerPlay: {
-      reframe: {
-        a: "Most companies say they're data-driven. What they really mean is: the data team is data-driven, and everyone else files a ticket and waits three days for an answer.",
-        gap: "The gap between 'we have data' and 'we make decisions with data' is an access problem \u2014 not a technology problem. The data exists. The analytics platform exists. But 80% of the people who could benefit from it can't use it without knowing SQL, building a chart, or asking someone who knows how. So they guess. They go on instinct. They wait. And by the time the answer comes back, the moment to act on it has passed.",
-        b: "When anyone on the team can ask a question in plain English and get a real answer in 30 seconds \u2014 not a dashboard link, not a ticket, a real answer \u2014 the entire organization starts making faster, better decisions. That's not a product feature. That's a culture shift."
-      },
-      insight: "The bottleneck in most data-driven companies isn't the data \u2014 it's the 3-day wait for someone who can query it. AI Assistant removes the bottleneck without replacing the data team.",
-      leadWith: "What's the last question someone on your team had to wait more than a day to get answered about your product? Whatever it was \u2014 that wait is the problem we solve.",
-      notWith: "We have an AI chatbot that answers questions about your data. Don't say chatbot. Don't lead with the interface \u2014 lead with the access gap it closes.",
-      wheelPrompt: "Don't describe AI Assistant. Tell me what a company loses every time someone has to file a ticket to get a data question answered.",
-      wheelHint: "The insight is about access and speed \u2014 the cost of the gap between having data and being able to act on it. Lead with the 3-day wait story."
-    },
-    resources: [
-      { label: "AI Assistant on Spekit", url: "https://app.spekit.co/app/wiki/?topic=d5189c51-7082-4668-bbdc-c6bf1dd56b1f&tag=Product%20-%20AI%20Assistant", description: "Sales enablement resources for AI Assistant" },
-    ],
-  },
 ];
 
 export const SECTIONS = [
@@ -402,7 +363,7 @@ export const SECTIONS = [
   { key: "connectionPlay", label: "\ud83d\udd17 Connection Play", desc: "Bridge to another Amplitude product." },
 ] as const;
 
-export const WHEEL_COLORS = ["#2962FF", "#7B2FFF", "#00BFA5", "#FF6B35", "#6941C6", "#FFB300", "#E91E8C", "#00C853"];
+export const WHEEL_COLORS = ["#2962FF", "#7B2FFF", "#00BFA5", "#FF6B35", "#6941C6", "#FFB300", "#E91E8C"];
 
 export function getRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];

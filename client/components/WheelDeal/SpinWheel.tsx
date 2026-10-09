@@ -16,7 +16,6 @@ const CONFETTI_EMOJIS: Record<string, string[]> = {
   statsig: ["📈", "⚡️"],
   activation: ["🚀", "🎯"],
   aifeedback: ["🦾", "💬"],
-  aiassistant: ["🤖", "🗣️"],
 };
 
 function fireEmojiConfetti(productId: string) {
